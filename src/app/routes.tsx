@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react"
 // Lazy-loaded pages
 const LoginPage       = lazy(() => import("@/features/auth/pages/LoginPage"))
 const PlaceholderPage = lazy(() => import("@/app/PlaceholderPage"))
+const OrderWorkflowPage = lazy(() => import("@/features/orders/pages/OrderWorkflowPage"))
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -38,7 +39,7 @@ export default function AppRoutes() {
               <MainLayout>
                 <Routes>
                   <Route index element={<Navigate to="/orders/new" replace />} />
-                  <Route path="orders/new" element={<PlaceholderPage title="Nueva Orden" />} />
+                  <Route path="orders/new" element={<OrderWorkflowPage />} />
                   <Route path="orders"     element={<PlaceholderPage title="Historial de Órdenes" />} />
                   <Route path="catalog"    element={<PlaceholderPage title="Catálogo de Pruebas" />} />
                   <Route path="settings"   element={<PlaceholderPage title="Configuración" />} />
