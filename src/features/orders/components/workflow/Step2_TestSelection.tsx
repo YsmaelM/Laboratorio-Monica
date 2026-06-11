@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+
 import { Loader2 } from "lucide-react"
 import type { TestEntry, TestCatalogItem } from "@/shared/types"
 import { useTestCatalog } from "../../hooks/useTestCatalog"

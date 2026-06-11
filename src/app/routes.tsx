@@ -9,6 +9,8 @@ const LoginPage       = lazy(() => import("@/features/auth/pages/LoginPage"))
 const PlaceholderPage = lazy(() => import("@/app/PlaceholderPage"))
 const OrderWorkflowPage = lazy(() => import("@/features/orders/pages/OrderWorkflowPage"))
 
+const CatalogManagementPage = lazy(() => import("@/features/catalog/pages/CatalogManagementPage"))
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <FullScreenSpinner />
@@ -41,7 +43,7 @@ export default function AppRoutes() {
                   <Route index element={<Navigate to="/orders/new" replace />} />
                   <Route path="orders/new" element={<OrderWorkflowPage />} />
                   <Route path="orders"     element={<PlaceholderPage title="Historial de Órdenes" />} />
-                  <Route path="catalog"    element={<PlaceholderPage title="Catálogo de Pruebas" />} />
+                  <Route path="catalog"    element={<CatalogManagementPage />} />
                   <Route path="settings"   element={<PlaceholderPage title="Configuración" />} />
                   <Route path="*"          element={<Navigate to="/orders/new" replace />} />
                 </Routes>

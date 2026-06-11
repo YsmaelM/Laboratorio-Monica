@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, writeBatch } from "firebase/firestore"
+import { collection, doc, getDocs, writeBatch } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import type { TestCatalogItem } from "@/shared/types"
 

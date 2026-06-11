@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
+import { collection, getDocs } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import type { TestCatalogItem } from "@/shared/types"
 
