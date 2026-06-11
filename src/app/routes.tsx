@@ -8,6 +8,8 @@ import { Loader2 } from "lucide-react"
 const LoginPage       = lazy(() => import("@/features/auth/pages/LoginPage"))
 const PlaceholderPage = lazy(() => import("@/app/PlaceholderPage"))
 const OrderWorkflowPage = lazy(() => import("@/features/orders/pages/OrderWorkflowPage"))
+const OrderHistoryPage = lazy(() => import("@/features/orders/pages/OrderHistoryPage"))
+const LabSettingsPage = lazy(() => import("@/features/settings/pages/LabSettingsPage"))
 
 const CatalogManagementPage = lazy(() => import("@/features/catalog/pages/CatalogManagementPage"))
 
@@ -42,9 +44,9 @@ export default function AppRoutes() {
                 <Routes>
                   <Route index element={<Navigate to="/orders/new" replace />} />
                   <Route path="orders/new" element={<OrderWorkflowPage />} />
-                  <Route path="orders"     element={<PlaceholderPage title="Historial de Órdenes" />} />
+                  <Route path="orders"     element={<OrderHistoryPage />} />
                   <Route path="catalog"    element={<CatalogManagementPage />} />
-                  <Route path="settings"   element={<PlaceholderPage title="Configuración" />} />
+                  <Route path="settings"   element={<LabSettingsPage />} />
                   <Route path="*"          element={<Navigate to="/orders/new" replace />} />
                 </Routes>
               </MainLayout>

@@ -1,8 +1,21 @@
-import { useState, type FormEvent } from "react"
 import { X, Loader2, AlertCircle } from "lucide-react"
 import { usePatientMutation } from "../hooks/usePatientMutation"
 import type { Patient } from "@/shared/types"
 import { Timestamp } from "firebase/firestore"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+
+const patientSchema = z.object({
+  nationalId: z.string().min(1, "La cédula/ID es requerida"),
+  firstName: z.string().min(2, "Mínimo 2 caracteres"),
+  lastName: z.string().min(2, "Mínimo 2 caracteres"),
+  dateOfBirth: z.string().min(1, "La fecha es requerida"),
+  sex: z.enum(["M", "F"]),
+  phone: z.string().optional(),
+})
+
+type PatientFormValues = z.infer<typeof patientSchema>
 
 interface QuickRegisterModalProps {
   isOpen: boolean
@@ -12,41 +25,43 @@ interface QuickRegisterModalProps {
 }
 
 export default function QuickRegisterModal({ isOpen, onClose, initialNationalId = "", onSuccess }: QuickRegisterModalProps) {
-  const { createPatient, loading, error } = usePatientMutation()
+  const { createPatient, loading, error: mutationError } = usePatientMutation()
   
-  const [nationalId, setNationalId] = useState(initialNationalId)
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [dateOfBirth, setDateOfBirth] = useState("")
-  const [sex, setSex] = useState<"M" | "F">("M")
-  const [phone, setPhone] = useState("")
-  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<PatientFormValues>({
+    resolver: zodResolver(patientSchema),
+    defaultValues: {
+      nationalId: initialNationalId,
+      sex: "M",
+    }
+  })
+
   if (!isOpen) return null
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    
-    // Parse date into a Firebase Timestamp approximation (Date object)
-    // Firestore Timestamp.fromDate() can be used before saving, or we just pass the Date
-    const dobDate = new Date(dateOfBirth)
-    // Add timezone offset to avoid previous day issues
+  const onSubmit = async (data: PatientFormValues) => {
+    const dobDate = new Date(data.dateOfBirth)
     const dob = new Date(dobDate.getTime() + Math.abs(dobDate.getTimezoneOffset() * 60000))
     
     const patientData: Omit<Patient, "id" | "createdAt" | "updatedAt"> = {
-      nationalId,
-      firstName,
-      lastName,
+      nationalId: data.nationalId,
+      firstName: data.firstName,
+      lastName: data.lastName,
       dateOfBirth: Timestamp.fromDate(dob),
-      sex,
+      sex: data.sex,
     }
 
-    if (phone.trim()) {
-      patientData.phone = phone.trim()
+    if (data.phone?.trim()) {
+      patientData.phone = data.phone.trim()
     }
 
     const newPatient = await createPatient(patientData)
 
     if (newPatient) {
+      reset()
       onSuccess(newPatient)
       onClose()
     }
@@ -62,80 +77,84 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium text-white/80">Cédula / ID *</label>
               <input
-                required
                 type="text"
-                value={nationalId}
-                onChange={(e) => setNationalId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/20 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("nationalId")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.nationalId ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.nationalId && <p className="mt-1 text-xs text-red-400">{errors.nationalId.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Nombres *</label>
               <input
-                required
                 type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("firstName")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.firstName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.firstName && <p className="mt-1 text-xs text-red-400">{errors.firstName.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Apellidos *</label>
               <input
-                required
                 type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("lastName")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.lastName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.lastName && <p className="mt-1 text-xs text-red-400">{errors.lastName.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Fecha de Nacimiento *</label>
               <input
-                required
                 type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("dateOfBirth")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.dateOfBirth ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.dateOfBirth && <p className="mt-1 text-xs text-red-400">{errors.dateOfBirth.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Sexo *</label>
               <select
-                required
-                value={sex}
-                onChange={(e) => setSex(e.target.value as "M" | "F")}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("sex")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.sex ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               >
                 <option value="M" className="bg-surface-900">Masculino</option>
                 <option value="F" className="bg-surface-900">Femenino</option>
               </select>
+              {errors.sex && <p className="mt-1 text-xs text-red-400">{errors.sex.message}</p>}
             </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium text-white/80">Teléfono (Opcional)</label>
               <input
                 type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                {...register("phone")}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
           </div>
 
-          {error && (
+          {mutationError && (
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400 border border-red-500/20">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>{error}</p>
+              <p>{mutationError}</p>
             </div>
           )}
 

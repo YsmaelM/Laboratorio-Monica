@@ -1,8 +1,21 @@
-import { useState, useEffect } from "react"
-import type { FormEvent } from "react"
+import { useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import type { TestCatalogItem } from "@/shared/types"
 import { useCatalogMutation } from "../hooks/useCatalogMutation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+
+const catalogSchema = z.object({
+  name: z.string().min(1, "El nombre es requerido"),
+  code: z.string().min(1, "El código es requerido"),
+  category: z.string().min(1, "La categoría es requerida"),
+  format: z.enum(["simple", "hematology", "urinalysis", "stool", "culture"]),
+  isQuickAction: z.boolean(),
+  order: z.coerce.number().min(0, "Debe ser mayor o igual a 0"),
+})
+
+type CatalogFormValues = z.infer<typeof catalogSchema>
 
 interface CatalogFormModalProps {
   isOpen: boolean
@@ -12,48 +25,49 @@ interface CatalogFormModalProps {
 }
 
 export default function CatalogFormModal({ isOpen, onClose, initialData, onSuccess }: CatalogFormModalProps) {
-  const { addCatalogItem, updateCatalogItem, loading, error } = useCatalogMutation()
+  const { addCatalogItem, updateCatalogItem, loading, error: mutationError } = useCatalogMutation()
 
-  const [name, setName] = useState("")
-  const [code, setCode] = useState("")
-  const [category, setCategory] = useState("")
-  const [format, setFormat] = useState<TestCatalogItem["format"]>("simple")
-  const [isQuickAction, setIsQuickAction] = useState(false)
-  const [order, setOrder] = useState(1)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue
+  } = useForm<CatalogFormValues>({
+    resolver: zodResolver(catalogSchema),
+    defaultValues: {
+      format: "simple",
+      isQuickAction: false,
+      order: 1,
+    }
+  })
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name)
-      setCode(initialData.code)
-      setCategory(initialData.category)
-      setFormat(initialData.format)
-      setIsQuickAction(initialData.isQuickAction)
-      setOrder(initialData.order)
+      setValue("name", initialData.name)
+      setValue("code", initialData.code)
+      setValue("category", initialData.category)
+      setValue("format", initialData.format)
+      setValue("isQuickAction", initialData.isQuickAction)
+      setValue("order", initialData.order)
     } else {
-      setName("")
-      setCode("")
-      setCategory("")
-      setFormat("simple")
-      setIsQuickAction(false)
-      setOrder(1)
+      reset({
+        name: "",
+        code: "",
+        category: "",
+        format: "simple",
+        isQuickAction: false,
+        order: 1,
+      })
     }
-  }, [initialData, isOpen])
+  }, [initialData, isOpen, reset, setValue])
 
   if (!isOpen) return null
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-
+  const onSubmit = async (data: CatalogFormValues) => {
     const itemData = {
-      name,
-      code,
-      category,
-      format,
-      isQuickAction,
-      order,
+      ...data,
       active: true,
-      // For now we keep existing template/defaults if editing, or empty if new.
-      // A full editor would handle simpleDefaults and profileTemplate here.
       ...(initialData?.simpleDefaults ? { simpleDefaults: initialData.simpleDefaults } : {}),
       ...(initialData?.profileTemplate ? { profileTemplate: initialData.profileTemplate } : {}),
     }
@@ -62,7 +76,7 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
     if (initialData) {
       success = await updateCatalogItem(initialData.id, itemData)
     } else {
-      const res = await addCatalogItem(itemData)
+      const res = await addCatalogItem(itemData as any)
       success = !!res
     }
 
@@ -85,48 +99,51 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
         </div>
 
         <div className="overflow-y-auto p-6">
-          <form id="catalog-form" onSubmit={handleSubmit} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <form id="catalog-form" onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium text-white/80">Nombre de la Prueba *</label>
               <input
-                required
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("name")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.name ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Código *</label>
               <input
-                required
                 type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("code")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.code ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.code && <p className="mt-1 text-xs text-red-400">{errors.code.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Categoría *</label>
               <input
-                required
                 type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                {...register("category")}
                 placeholder="Ej. Química, Hematología"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.category ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.category && <p className="mt-1 text-xs text-red-400">{errors.category.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Formato *</label>
               <select
-                required
-                value={format}
-                onChange={(e) => setFormat(e.target.value as TestCatalogItem["format"])}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("format")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.format ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               >
                 <option value="simple" className="bg-surface-900">Simple (1 resultado)</option>
                 <option value="hematology" className="bg-surface-900">Hematología</option>
@@ -134,24 +151,26 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
                 <option value="stool" className="bg-surface-900">Coprológico</option>
                 <option value="culture" className="bg-surface-900">Cultivo</option>
               </select>
+              {errors.format && <p className="mt-1 text-xs text-red-400">{errors.format.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Orden (prioridad)</label>
               <input
                 type="number"
-                value={order}
-                onChange={(e) => setOrder(Number(e.target.value))}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                {...register("order")}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.order ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
               />
+              {errors.order && <p className="mt-1 text-xs text-red-400">{errors.order.message}</p>}
             </div>
 
             <div className="sm:col-span-2 mt-2 flex items-center gap-3">
               <input
                 type="checkbox"
                 id="isQuickAction"
-                checked={isQuickAction}
-                onChange={(e) => setIsQuickAction(e.target.checked)}
+                {...register("isQuickAction")}
                 className="h-5 w-5 rounded border-white/20 bg-white/5 text-primary-500 focus:ring-primary-500 focus:ring-offset-surface-900"
               />
               <label htmlFor="isQuickAction" className="text-sm font-medium text-white/80">
@@ -159,7 +178,6 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
               </label>
             </div>
 
-            {/* Note: In a full implementation, the ProfileTemplateEditor / RefRangeEditor would go here */}
             {initialData && (
                <div className="sm:col-span-2 mt-4 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-400">
                  Nota: Para editar rangos de referencia y plantillas de pruebas complejas, usaremos un editor avanzado en una próxima actualización.
@@ -167,9 +185,9 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
             )}
           </form>
 
-          {error && (
+          {mutationError && (
             <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-              {error}
+              {mutationError}
             </div>
           )}
         </div>
