@@ -1,13 +1,21 @@
-import { useState, type FormEvent } from "react"
+import { useState, useEffect, type FormEvent } from "react"
 import { useAuth } from "@/app/providers/AuthProvider"
+import { useNavigate } from "react-router-dom"
 import { FlaskConical, Lock, Mail, AlertCircle, Loader2 } from "lucide-react"
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
+  const navigate = useNavigate()
   const [email,    setEmail]    = useState("")
   const [password, setPassword] = useState("")
   const [error,    setError]    = useState<string | null>(null)
   const [loading,  setLoading]  = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      navigate("/", { replace: true })
+    }
+  }, [user, navigate])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -15,8 +23,9 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await signIn(email, password)
-    } catch {
-      setError("Credenciales incorrectas. Verifique su correo y contraseña.")
+    } catch (err: any) {
+      console.error("Login error:", err)
+      setError(err?.message || "Credenciales incorrectas. Verifique su correo y contraseña.")
     } finally {
       setLoading(false)
     }
