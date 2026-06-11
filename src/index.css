@@ -1,0 +1,117 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface-950 font-sans text-white;
+    margin: 0;
+  }
+
+  /* Custom scrollbar — dark themed */
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb  { @apply rounded-full bg-white/15 hover:bg-white/25; }
+  ::-webkit-scrollbar-corner { @apply bg-transparent; }
+}
+
+@layer components {
+  /* ── Glassmorphism card ─────────────────────────────── */
+  .card {
+    @apply rounded-2xl border border-white/10 bg-surface-900/70 shadow-card backdrop-blur-xl;
+  }
+
+  /* ── Form input base ────────────────────────────────── */
+  .input-base {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white
+           placeholder-white/25 outline-none transition
+           focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30;
+  }
+
+  /* ── Select base ────────────────────────────────────── */
+  .select-base {
+    @apply input-base cursor-pointer appearance-none;
+  }
+
+  /* ── Label ──────────────────────────────────────────── */
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/50;
+  }
+
+  /* ── Primary button ─────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           bg-gradient-to-r from-primary-600 to-accent-500
+           px-5 py-2.5 text-sm font-semibold text-white shadow-glow-primary
+           transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50;
+  }
+
+  /* ── Ghost button ───────────────────────────────────── */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           px-4 py-2.5 text-sm font-medium text-white/60
+           transition hover:bg-white/8 hover:text-white active:scale-[0.98];
+  }
+
+  /* ── Danger button ──────────────────────────────────── */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           px-4 py-2.5 text-sm font-medium text-red-400
+           transition hover:bg-red-500/10 active:scale-[0.98];
+  }
+
+  /* ── Badge ──────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .badge-primary { @apply badge bg-primary-600/20 text-primary-300; }
+  .badge-success { @apply badge bg-green-500/20 text-green-400; }
+  .badge-warning { @apply badge bg-yellow-500/20 text-yellow-400; }
+  .badge-danger  { @apply badge bg-red-500/20 text-red-400; }
+  .badge-neutral { @apply badge bg-white/10 text-white/60; }
+
+  /* ── Result flag colours ────────────────────────────── */
+  .flag-H { @apply text-flag-high font-semibold; }
+  .flag-L { @apply text-flag-low  font-semibold; }
+  .flag-N { @apply text-flag-normal; }
+
+  /* ── Section divider ────────────────────────────────── */
+  .section-title {
+    @apply mb-3 text-xs font-semibold uppercase tracking-widest text-white/40;
+  }
+
+  /* ── Page header ────────────────────────────────────── */
+  .page-header {
+    @apply border-b border-white/8 px-8 py-5;
+  }
+  .page-title {
+    @apply text-xl font-bold tracking-tight text-white;
+  }
+  .page-body {
+    @apply flex-1 overflow-y-auto p-8;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Subtle grid background for auth pages */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
