@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react"
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore"
+import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import type { OrderResult } from "@/shared/types"
-import { Loader2, FileText, Search } from "lucide-react"
+import { Loader2, FileText, Search, Trash2, X } from "lucide-react"
+import toast from "react-hot-toast"
+import { formatDate } from "@/shared/lib/utils"
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<OrderResult[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -29,6 +34,22 @@ export default function OrderHistoryPage() {
     fetchOrders()
   }, [])
 
+  const handleDelete = async () => {
+    if (!orderToDelete) return
+    setIsDeleting(true)
+    try {
+      await deleteDoc(doc(db, "orders_results", orderToDelete))
+      setOrders(prev => prev.filter(o => o.id !== orderToDelete))
+      toast.success("Orden eliminada correctamente")
+    } catch (err) {
+      console.error("Error deleting order:", err)
+      toast.error("Error al eliminar la orden")
+    } finally {
+      setIsDeleting(false)
+      setOrderToDelete(null)
+    }
+  }
+
   const filteredOrders = orders.filter(order => 
     order.patientSnapshot.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.patientSnapshot.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,7 +57,7 @@ export default function OrderHistoryPage() {
   )
 
   return (
-    <div className="mx-auto max-w-6xl py-6">
+    <div className="mx-auto max-w-6xl py-6 relative">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Historial de Órdenes</h1>
@@ -86,7 +107,7 @@ export default function OrderHistoryPage() {
                 filteredOrders.map(order => (
                   <tr key={order.id} className="transition hover:bg-white/5">
                     <td className="px-6 py-4 whitespace-nowrap text-white/80">
-                      {order.createdAt?.toDate().toLocaleDateString()}
+                      {formatDate(order.createdAt)}
                     </td>
                     <td className="px-6 py-4 font-medium">
                       {order.patientSnapshot.firstName} {order.patientSnapshot.lastName}
@@ -107,19 +128,35 @@ export default function OrderHistoryPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {order.pdfUrl ? (
+                      <div className="flex items-center justify-end gap-2">
+                        {order.pdfUrl ? (
+                          <a
+                            href={order.pdfUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-lg bg-blue-500/10 p-1.5 text-blue-400 transition hover:bg-blue-500/20"
+                            title="Ver PDF"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-white/30 px-2 py-1.5">Sin PDF</span>
+                        )}
                         <a
-                          href={order.pdfUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+                          href={`/orders/new?edit=${order.id}`}
+                          className="inline-flex items-center justify-center rounded-lg bg-white/5 p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white"
+                          title="Editar orden"
                         >
-                          <FileText className="h-4 w-4" />
-                          Ver PDF
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                         </a>
-                      ) : (
-                        <span className="text-xs text-white/30">Sin PDF</span>
-                      )}
+                        <button
+                          onClick={() => setOrderToDelete(order.id)}
+                          className="inline-flex items-center justify-center rounded-lg bg-red-500/10 p-1.5 text-red-400 transition hover:bg-red-500/20"
+                          title="Eliminar orden"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -128,6 +165,41 @@ export default function OrderHistoryPage() {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-950/80 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm animate-slide-up rounded-2xl border border-white/10 bg-surface-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setOrderToDelete(null)}
+              className="absolute right-4 top-4 rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="mb-2 text-lg font-bold text-white">¿Eliminar orden?</h3>
+            <p className="mb-6 text-sm text-white/60">
+              ¿Está seguro que desea eliminar este reporte? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => setOrderToDelete(null)}
+                disabled={isDeleting}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-glow-primary transition hover:bg-red-500 disabled:opacity-50"
+              >
+                {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

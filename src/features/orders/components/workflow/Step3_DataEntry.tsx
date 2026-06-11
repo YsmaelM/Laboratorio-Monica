@@ -7,6 +7,7 @@ import EntryFormFactory from "../entry-forms/EntryFormFactory"
 interface Step3DataEntryProps {
   patient: Patient
   tests: TestEntry[]
+  orderId?: string | null
   onTestsChange: (tests: TestEntry[]) => void
   onBack: () => void
   onOrderSaved: (orderId: string) => void
@@ -15,6 +16,7 @@ interface Step3DataEntryProps {
 export default function Step3DataEntry({
   patient,
   tests,
+  orderId,
   onTestsChange,
   onBack,
   onOrderSaved,
@@ -34,9 +36,9 @@ export default function Step3DataEntry({
   }
 
   const handleSave = async () => {
-    const orderId = await saveOrder(patient, tests, referringDoctor)
-    if (orderId) {
-      onOrderSaved(orderId)
+    const savedId = await saveOrder(patient, tests, referringDoctor, orderId || undefined)
+    if (savedId) {
+      onOrderSaved(savedId)
     }
   }
 

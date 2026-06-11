@@ -1,24 +1,68 @@
 import { useState, useEffect } from "react"
-import { CheckCircle2, FileText, Loader2, ExternalLink } from "lucide-react"
-import type { Patient, TestEntry } from "@/shared/types"
+import { useSearchParams } from "react-router-dom"
+import { doc, getDoc } from "firebase/firestore"
+import { db } from "@/shared/lib/firebase"
+import { CheckCircle2, FileText, Loader2, ExternalLink, X } from "lucide-react"
+import type { Patient, TestEntry, OrderResult } from "@/shared/types"
 import Step1Patient from "../components/workflow/Step1_Patient"
 import Step2TestSelection from "../components/workflow/Step2_TestSelection"
 import Step3DataEntry from "../components/workflow/Step3_DataEntry"
 import { seedCatalog } from "@/features/catalog/utils/seedCatalog"
 import { useGenerateReport } from "@/features/reports/hooks/useGenerateReport"
+import toast from "react-hot-toast"
 
 export default function OrderWorkflowPage() {
   const { generateAndSavePdf, isGenerating, error: reportError } = useGenerateReport()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   const [step, setStep] = useState<1 | 2 | 3 | "done">(1)
   const [patient, setPatient] = useState<Patient | null>(null)
   const [selectedTests, setSelectedTests] = useState<TestEntry[]>([])
   const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null)
+  
+  const [showSignatureModal, setShowSignatureModal] = useState(false)
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false)
 
   useEffect(() => {
     seedCatalog().catch(console.error)
   }, [])
+
+  useEffect(() => {
+    const editId = searchParams.get("edit")
+    if (editId) {
+      loadOrderForEditing(editId)
+    }
+  }, [searchParams])
+
+  const loadOrderForEditing = async (orderId: string) => {
+    setIsLoadingEdit(true)
+    try {
+      const orderDoc = await getDoc(doc(db, "orders_results", orderId))
+      if (!orderDoc.exists()) {
+        toast.error("La orden no existe")
+        return
+      }
+      const order = { id: orderDoc.id, ...orderDoc.data() } as OrderResult
+
+      const patientDoc = await getDoc(doc(db, "patients", order.patientId))
+      if (patientDoc.exists()) {
+        setPatient({ id: patientDoc.id, ...patientDoc.data() } as Patient)
+      } else {
+        toast.error("El paciente de esta orden no fue encontrado")
+        return
+      }
+
+      setSelectedTests(order.tests)
+      setSavedOrderId(order.id)
+      setStep(3) // Jump directly to data entry
+    } catch (error) {
+      console.error("Error loading order for edit:", error)
+      toast.error("Error al cargar la orden")
+    } finally {
+      setIsLoadingEdit(false)
+    }
+  }
 
   const handleOrderSaved = (orderId: string) => {
     setSavedOrderId(orderId)
@@ -31,11 +75,17 @@ export default function OrderWorkflowPage() {
     setSelectedTests([])
     setSavedOrderId(null)
     setGeneratedPdfUrl(null)
+    setShowSignatureModal(false)
   }
 
-  const handleGeneratePdf = async () => {
+  const handleGenerateClick = () => {
+    setShowSignatureModal(true)
+  }
+
+  const handleConfirmGenerate = async (includeSignature: boolean) => {
     if (!savedOrderId) return
-    const url = await generateAndSavePdf(savedOrderId)
+    setShowSignatureModal(false)
+    const url = await generateAndSavePdf(savedOrderId, includeSignature)
     if (url) {
       setGeneratedPdfUrl(url)
       window.open(url, "_blank")
@@ -45,7 +95,7 @@ export default function OrderWorkflowPage() {
   const currentStep = step === "done" ? 3 : step
 
   return (
-    <div className="mx-auto max-w-5xl py-6">
+    <div className="mx-auto max-w-5xl py-6 relative">
       {/* Step Indicator */}
       <div className="mb-8 flex items-center justify-center gap-4">
         {[
@@ -97,6 +147,7 @@ export default function OrderWorkflowPage() {
           <Step3DataEntry
             patient={patient}
             tests={selectedTests}
+            orderId={savedOrderId}
             onTestsChange={setSelectedTests}
             onBack={() => setStep(2)}
             onOrderSaved={handleOrderSaved}
@@ -131,7 +182,7 @@ export default function OrderWorkflowPage() {
                 </a>
               ) : (
                 <button
-                  onClick={handleGeneratePdf}
+                  onClick={handleGenerateClick}
                   disabled={isGenerating}
                   className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-blue-500 disabled:opacity-50"
                 >
@@ -156,6 +207,38 @@ export default function OrderWorkflowPage() {
           </div>
         )}
       </div>
+
+      {/* Signature Confirmation Modal */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-950/80 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md animate-slide-up rounded-2xl border border-white/10 bg-surface-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setShowSignatureModal(false)}
+              className="absolute right-4 top-4 rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="mb-2 text-lg font-bold text-white">¿Incluir firma digital en el reporte?</h3>
+            <p className="mb-6 text-sm text-white/60">
+              Si tu configuración de laboratorio tiene una firma digital, puedes elegir incluirla o generar el reporte sin firma.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => handleConfirmGenerate(false)}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+              >
+                No, sin firma
+              </button>
+              <button
+                onClick={() => handleConfirmGenerate(true)}
+                className="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-primary-500"
+              >
+                Sí, incluir firma
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

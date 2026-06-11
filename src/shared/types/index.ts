@@ -11,6 +11,7 @@ export interface LabConfig {
   logoUrl?: string
   letterheadUrl?: string
   footerText?: string
+  signatureUrl?: string
 }
 
 // ─────────────────────────────────────────────

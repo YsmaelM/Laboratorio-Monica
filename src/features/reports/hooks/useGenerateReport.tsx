@@ -10,7 +10,7 @@ export function useGenerateReport() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const generateAndSavePdf = async (orderId: string): Promise<string | null> => {
+  const generateAndSavePdf = async (orderId: string, includeSignature: boolean = true): Promise<string | null> => {
     setIsGenerating(true)
     setError(null)
 
@@ -25,13 +25,21 @@ export function useGenerateReport() {
       let labInfo: LabConfig
       if (configDoc.exists()) {
         labInfo = configDoc.data() as LabConfig
+        if (!labInfo.signatureUrl) {
+          labInfo.signatureUrl = "/firma.jpg"
+        }
       } else {
         // Fallback lab info
         labInfo = {
           labName: "Laboratorio Clínico",
           address: "Dirección no configurada",
           phone: "Teléfono no configurado",
+          signatureUrl: "/firma.jpg"
         }
+      }
+
+      if (!includeSignature) {
+        labInfo.signatureUrl = ""
       }
 
       // 3. Generate PDF Blob

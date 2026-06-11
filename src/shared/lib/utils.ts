@@ -6,10 +6,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Helper to parse different date types (Firestore Timestamp, serialized timestamp, Date, string) */
+function parseDate(val: any): Date | null {
+  if (!val) return null
+  if (typeof val.toDate === "function") {
+    return val.toDate()
+  }
+  if (typeof val === "object" && "seconds" in val && typeof val.seconds === "number") {
+    return new Date(val.seconds * 1000)
+  }
+  if (val instanceof Date) {
+    return val
+  }
+  const parsed = new Date(val)
+  return isNaN(parsed.getTime()) ? null : parsed
+}
+
 /** Format a Firestore Timestamp or Date to a locale date string */
-export function formatDate(date: Date | { toDate: () => Date } | null | undefined): string {
-  if (!date) return "—"
-  const d = "toDate" in date ? date.toDate() : date
+export function formatDate(date: any): string {
+  const d = parseDate(date)
+  if (!d) return "—"
   return d.toLocaleDateString("es-DO", {
     year: "numeric",
     month: "long",
@@ -18,9 +34,9 @@ export function formatDate(date: Date | { toDate: () => Date } | null | undefine
 }
 
 /** Calculate age in years from a Date or Firestore Timestamp */
-export function calcAge(dob: Date | { toDate: () => Date } | null | undefined): string {
-  if (!dob) return "—"
-  const d = "toDate" in dob ? dob.toDate() : dob
+export function calcAge(dob: any): string {
+  const d = parseDate(dob)
+  if (!d) return "—"
   const diff = Date.now() - d.getTime()
   const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25))
   return `${age} años`

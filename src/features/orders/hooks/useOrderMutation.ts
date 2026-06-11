@@ -1,9 +1,29 @@
 import { useState } from "react"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { collection, addDoc, serverTimestamp, setDoc, doc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import { useAuth } from "@/app/providers/AuthProvider"
 import type { Patient, TestEntry, OrderResult, PatientSnapshot } from "@/shared/types"
 import { Timestamp } from "firebase/firestore"
+
+// Helper to recursively remove undefined values while preserving Firestore Timestamps
+function cleanUndefined(obj: any): any {
+  if (obj === null || obj === undefined) return undefined;
+  if (obj instanceof Timestamp || obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(cleanUndefined);
+  if (typeof obj === "object") {
+    const cleaned: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const val = obj[key];
+        if (val !== undefined) {
+          cleaned[key] = cleanUndefined(val);
+        }
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
 
 export function useOrderMutation() {
   const [loading, setLoading] = useState(false)
@@ -13,7 +33,8 @@ export function useOrderMutation() {
   const saveOrder = async (
     patient: Patient,
     tests: TestEntry[],
-    referringDoctor?: string
+    referringDoctor?: string,
+    orderId?: string
   ): Promise<string | null> => {
     setLoading(true)
     setError(null)
@@ -43,16 +64,26 @@ export function useOrderMutation() {
         orderData.referringDoctor = referringDoctor.trim()
       }
 
-      // Clean undefined values from nested objects to avoid Firestore errors
-      const cleanedData = JSON.parse(JSON.stringify(orderData))
+      // Clean undefined values recursively, preserving Timestamps
+      const cleanedData = cleanUndefined(orderData)
 
-      const docRef = await addDoc(collection(db, "orders_results"), {
-        ...cleanedData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      })
+      if (orderId) {
+        // Update existing order
+        await setDoc(doc(db, "orders_results", orderId), {
+          ...cleanedData,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+        return orderId
+      } else {
+        // Create new order
+        const docRef = await addDoc(collection(db, "orders_results"), {
+          ...cleanedData,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        return docRef.id
+      }
 
-      return docRef.id
     } catch (err: any) {
       console.error("Error saving order:", err)
       setError(err.message || "Error al guardar la orden")

@@ -2,7 +2,8 @@ import { Document } from "@react-pdf/renderer"
 import { Timestamp } from "firebase/firestore"
 import { PageWrapper } from "./PageWrapper"
 import { PdfSectionFactory } from "./result-sections/PdfSectionFactory"
-import type { LabConfig, OrderResult } from "@/shared/types"
+import { GroupedSimplePdfSection } from "./result-sections/GroupedSimplePdfSection"
+import type { LabConfig, OrderResult, SimpleTestEntry } from "@/shared/types"
 
 interface ReportDocumentProps {
   order: OrderResult
@@ -25,6 +26,9 @@ export function ReportDocument({ order, labInfo }: ReportDocumentProps) {
     orderDate = new Date()
   }
 
+  const simpleTests = order.tests.filter(t => t.format === "simple") as SimpleTestEntry[]
+  const otherTests = order.tests.filter(t => t.format !== "simple")
+
   return (
     <Document
       title={`Resultados - ${order.patientSnapshot.firstName} ${order.patientSnapshot.lastName}`}
@@ -38,7 +42,9 @@ export function ReportDocument({ order, labInfo }: ReportDocumentProps) {
         orderDate={orderDate}
         referringDoctor={order.referringDoctor}
       >
-        {order.tests.map((testEntry) => (
+        <GroupedSimplePdfSection entries={simpleTests} />
+        
+        {otherTests.map((testEntry) => (
           <PdfSectionFactory key={testEntry.catalogId} entry={testEntry} />
         ))}
       </PageWrapper>

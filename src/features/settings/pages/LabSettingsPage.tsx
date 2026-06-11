@@ -14,6 +14,7 @@ export default function LabSettingsPage() {
   const [phone, setPhone] = useState("")
   const [licenseNumber, setLicenseNumber] = useState("")
   const [footerText, setFooterText] = useState("")
+  const [signatureUrl, setSignatureUrl] = useState("")
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -27,6 +28,7 @@ export default function LabSettingsPage() {
           setPhone(data.phone || "")
           setLicenseNumber(data.licenseNumber || "")
           setFooterText(data.footerText || "")
+          setSignatureUrl(data.signatureUrl || "/firma.jpg")
         }
       } catch (err) {
         console.error("Error fetching lab config:", err)
@@ -49,7 +51,8 @@ export default function LabSettingsPage() {
         address,
         phone,
         licenseNumber,
-        footerText
+        footerText,
+        signatureUrl
       }, { merge: true })
       
       toast.success("Configuración guardada exitosamente")
@@ -125,6 +128,18 @@ export default function LabSettingsPage() {
                 onChange={(e) => setLicenseNumber(e.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-white/80">URL Firma Digital (PNG con fondo transparente)</label>
+              <input
+                type="url"
+                value={signatureUrl}
+                onChange={(e) => setSignatureUrl(e.target.value)}
+                placeholder="https://..."
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/20 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+              <p className="mt-1 text-xs text-white/40">URL de la imagen para insertar en el pie del PDF.</p>
             </div>
 
             <div className="sm:col-span-2">
