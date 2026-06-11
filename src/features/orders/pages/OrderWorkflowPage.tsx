@@ -1,10 +1,17 @@
-import { useState } from "react"
-import type { Patient } from "@/shared/types"
+import { useState, useEffect } from "react"
+import type { Patient, TestEntry } from "@/shared/types"
 import Step1Patient from "../components/workflow/Step1_Patient"
+import Step2TestSelection from "../components/workflow/Step2_TestSelection"
+import { seedCatalog } from "@/features/catalog/utils/seedCatalog"
 
 export default function OrderWorkflowPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [patient, setPatient] = useState<Patient | null>(null)
+  const [selectedTests, setSelectedTests] = useState<TestEntry[]>([])
+
+  useEffect(() => {
+    seedCatalog().catch(console.error)
+  }, [])
 
   return (
     <div className="mx-auto max-w-5xl py-6">
@@ -44,11 +51,20 @@ export default function OrderWorkflowPage() {
         )}
         
         {step === 2 && (
+          <Step2TestSelection
+            selectedTests={selectedTests}
+            onTestsChange={setSelectedTests}
+            onNext={() => setStep(3)}
+            onBack={() => setStep(1)}
+          />
+        )}
+
+        {step === 3 && (
           <div className="text-center py-10">
-            <h2 className="text-xl text-white">Paso 2: Selección de Pruebas</h2>
-            <p className="mt-2 text-white/60">En construcción (Fase 2)...</p>
+            <h2 className="text-xl text-white">Paso 3: Ingreso de Resultados</h2>
+            <p className="mt-2 text-white/60">En construcción (Fase 3)...</p>
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="mt-6 text-primary-400 hover:text-primary-300"
             >
               Volver
