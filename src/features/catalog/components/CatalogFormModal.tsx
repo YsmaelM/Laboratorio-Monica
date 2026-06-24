@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react"
 import { X, Loader2 } from "lucide-react"
-import type { TestCatalogItem, ReferenceValue } from "@/shared/types"
+import type { TestCatalogItem, ReferenceValue, CustomFormatTemplate } from "@/shared/types"
 import { useCatalogMutation } from "../hooks/useCatalogMutation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import ReferenceValuesEditor from "./ReferenceValuesEditor"
 import { migrateRefRange } from "../utils/migrateRefRanges"
+import FormatBuilder from "./FormatBuilder"
 
 const catalogSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -31,6 +32,7 @@ interface CatalogFormModalProps {
 export default function CatalogFormModal({ isOpen, onClose, initialData, onSuccess }: CatalogFormModalProps) {
   const { addCatalogItem, updateCatalogItem, loading, error: mutationError } = useCatalogMutation()
   const [refValue, setRefValue] = useState<ReferenceValue | undefined>(undefined)
+  const [customTemplate, setCustomTemplate] = useState<CustomFormatTemplate>({ rows: [] })
 
   const {
     register,
@@ -71,6 +73,11 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
         setValue("method", "")
         setRefValue(undefined)
       }
+      if (initialData.customTemplate) {
+        setCustomTemplate(initialData.customTemplate)
+      } else {
+        setCustomTemplate({ rows: [] })
+      }
     } else {
       reset({
         name: "",
@@ -83,6 +90,7 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
         method: "",
       })
       setRefValue(undefined)
+      setCustomTemplate({ rows: [] })
     }
   }, [initialData, isOpen, reset, setValue])
 
@@ -105,6 +113,8 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
         method: data.method || "",
         refValue: refValue || null,
       }
+    } else if (data.format === "custom") {
+      itemData.customTemplate = customTemplate
     } else if (initialData?.profileTemplate) {
       itemData.profileTemplate = initialData.profileTemplate
     }
@@ -241,6 +251,21 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
                   <ReferenceValuesEditor
                     value={refValue}
                     onChange={(newValue) => setRefValue(newValue)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {watchedFormat === "custom" && (
+              <div className="sm:col-span-2 mt-2 space-y-3">
+                <div className="border-t border-white/10 pt-4">
+                  <label className="mb-3 block text-sm font-medium text-white/80">
+                    Estructura del Formato Custom
+                  </label>
+                  <FormatBuilder
+                    value={customTemplate}
+                    onChange={setCustomTemplate}
+                    formatName={watch("name")}
                   />
                 </div>
               </div>

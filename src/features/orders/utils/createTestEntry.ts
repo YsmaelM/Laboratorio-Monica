@@ -80,6 +80,14 @@ export function createTestEntry(catalogItem: TestCatalogItem): TestEntry {
         },
       }
 
+    case "custom":
+      return {
+        ...base,
+        format: "custom",
+        customTemplate: catalogItem.customTemplate ?? { rows: [] },
+        data: {},
+      }
+
     default:
       throw new Error(`Unsupported format: ${catalogItem.format}`)
   }

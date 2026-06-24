@@ -125,7 +125,7 @@ export default function CatalogManagementPage() {
           )}
 
           {activeTab === "formats" && (
-            <FormatsTab />
+            <FormatsTab items={catalog} onRefresh={handleSuccess} />
           )}
         </div>
       )}

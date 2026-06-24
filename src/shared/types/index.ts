@@ -92,6 +92,40 @@ export interface ProfileTemplate {
   sections: ProfileSection[]
 }
 
+// ─────────────────────────────────────────────
+// Custom Format Builder
+// ─────────────────────────────────────────────
+export interface FormatColumn {
+  id:        string
+  label:     string                            // "Color", "Moco", etc.
+  type:      "text" | "number" | "select" | "reference" | "unit"
+  options?:  string[]                          // Solo para type "select"
+  width?:    number                            // Ancho relativo (1–12)
+}
+
+export interface EmptyRow {
+  id:   string
+  type: "empty"
+}
+
+export interface HeaderRow {
+  id:   string
+  type: "header"
+  text: string                                 // "Análisis Macroscópico:"
+}
+
+export interface TestRow {
+  id:      string
+  type:    "test"
+  columns: FormatColumn[]
+}
+
+export type FormatRow = EmptyRow | HeaderRow | TestRow
+
+export interface CustomFormatTemplate {
+  rows: FormatRow[]
+}
+
 export interface TestCatalogItem {
   id:              string
   name:            string
@@ -99,8 +133,9 @@ export interface TestCatalogItem {
   format:          TestFormat
   category:        string
   isQuickAction:   boolean
-  simpleDefaults?: SimpleTestDefaults
+  simpleDefaults?:  SimpleTestDefaults
   profileTemplate?: ProfileTemplate
+  customTemplate?:  CustomFormatTemplate       // Solo cuando format === "custom"
   active:          boolean
   order:           number
 }
@@ -189,12 +224,22 @@ export interface CultureEntry extends TestEntryBase {
   }
 }
 
+export interface CustomTestEntry extends TestEntryBase {
+  format: "custom"
+  customTemplate: CustomFormatTemplate
+  data: {
+    // key: "<rowId>_<colId>" = valor ingresado por el usuario
+    [fieldKey: string]: string
+  }
+}
+
 export type TestEntry =
   | SimpleTestEntry
   | HematologyEntry
   | UrinalysisEntry
   | StoolEntry
   | CultureEntry
+  | CustomTestEntry
 
 export interface OrderResult {
   id:              string

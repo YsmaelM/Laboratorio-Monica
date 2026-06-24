@@ -5,6 +5,7 @@ import { HematologyPdfSection } from "./HematologyPdfSection"
 import { UrinalysisPdfSection } from "./UrinalysisPdfSection"
 import { StoolPdfSection } from "./StoolPdfSection"
 import { CulturePdfSection } from "./CulturePdfSection"
+import { CustomPdfSection } from "./CustomPdfSection"
 import { s } from "../../styles/pdfStyles"
 
 interface PdfSectionFactoryProps {
@@ -32,6 +33,8 @@ function renderSection(entry: TestEntry) {
       return <StoolPdfSection entry={entry} />
     case "culture":
       return <CulturePdfSection entry={entry} />
+    case "custom":
+      return <CustomPdfSection entry={entry} />
     default:
       return <Text style={s.tableCell}>Formato desconocido</Text>
   }
