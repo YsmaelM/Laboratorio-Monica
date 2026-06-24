@@ -7,8 +7,10 @@ interface PatientCardProps {
 }
 
 export default function PatientCard({ patient, onClear }: PatientCardProps) {
-  // Simple calculation for age based on dateOfBirth (Timestamp)
-  const calculateAge = (dobTimestamp: any) => {
+  // Simple calculation for age based on direct age or dateOfBirth (Timestamp)
+  const calculateAge = (p: Patient) => {
+    if (p.age !== undefined) return p.age
+    const dobTimestamp = p.dateOfBirth
     if (!dobTimestamp) return "N/A"
     const dob = dobTimestamp.toDate ? dobTimestamp.toDate() : new Date(dobTimestamp)
     const diff_ms = Date.now() - dob.getTime()
@@ -16,7 +18,7 @@ export default function PatientCard({ patient, onClear }: PatientCardProps) {
     return Math.abs(age_dt.getUTCFullYear() - 1970)
   }
 
-  const age = calculateAge(patient.dateOfBirth)
+  const age = calculateAge(patient)
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-surface-900 p-5 shadow-card">

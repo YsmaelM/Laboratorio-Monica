@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { X, Loader2, AlertCircle } from "lucide-react"
 import { usePatientMutation } from "../hooks/usePatientMutation"
 import type { Patient } from "@/shared/types"
@@ -10,10 +11,24 @@ const patientSchema = z.object({
   nationalId: z.string().min(1, "La cédula/ID es requerida"),
   firstName: z.string().min(2, "Mínimo 2 caracteres"),
   lastName: z.string().min(2, "Mínimo 2 caracteres"),
-  dateOfBirth: z.string().min(1, "La fecha es requerida"),
+  dateOfBirth: z.string().optional().or(z.literal("")),
+  age: z.preprocess(
+    (val) => (val === "" || val === undefined ? undefined : Number(val)),
+    z.number().min(0, "Debe ser mayor o igual a 0").optional()
+  ),
   sex: z.enum(["M", "F"]),
   phone: z.string().optional(),
-})
+}).refine(
+  (data) => {
+    const hasDob = data.dateOfBirth && data.dateOfBirth.trim() !== ""
+    const hasAge = data.age !== undefined && data.age !== null && !isNaN(data.age)
+    return hasDob || hasAge
+  },
+  {
+    message: "Debe ingresar la fecha de nacimiento o la edad",
+    path: ["age"],
+  }
+)
 
 type PatientFormValues = z.infer<typeof patientSchema>
 
@@ -31,27 +46,65 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    setValue,
+    watch,
   } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
       nationalId: initialNationalId,
       sex: "M",
+      dateOfBirth: "",
     }
   })
+
+  const watchedDob = watch("dateOfBirth")
+
+  useEffect(() => {
+    if (watchedDob) {
+      const parts = watchedDob.split("-")
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10)
+        const month = parseInt(parts[1], 10) - 1
+        const day = parseInt(parts[2], 10)
+        const dobDate = new Date(year, month, day)
+        if (!isNaN(dobDate.getTime())) {
+          const today = new Date()
+          let calculatedAge = today.getFullYear() - dobDate.getFullYear()
+          const monthDiff = today.getMonth() - dobDate.getMonth()
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+            calculatedAge--
+          }
+          if (calculatedAge >= 0) {
+            setValue("age", calculatedAge, { shouldValidate: true })
+          }
+        }
+      }
+    }
+  }, [watchedDob, setValue])
 
   if (!isOpen) return null
 
   const onSubmit = async (data: PatientFormValues) => {
-    const dobDate = new Date(data.dateOfBirth)
-    const dob = new Date(dobDate.getTime() + Math.abs(dobDate.getTimezoneOffset() * 60000))
+    let dob: Timestamp | undefined = undefined
+    if (data.dateOfBirth && data.dateOfBirth.trim() !== "") {
+      const dobDate = new Date(data.dateOfBirth)
+      const adjustedDob = new Date(dobDate.getTime() + Math.abs(dobDate.getTimezoneOffset() * 60000))
+      dob = Timestamp.fromDate(adjustedDob)
+    }
     
     const patientData: Omit<Patient, "id" | "createdAt" | "updatedAt"> = {
       nationalId: data.nationalId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      dateOfBirth: Timestamp.fromDate(dob),
+      firstName: data.firstName.toUpperCase().trim(),
+      lastName: data.lastName.toUpperCase().trim(),
       sex: data.sex,
+    }
+
+    if (dob) {
+      patientData.dateOfBirth = dob
+    }
+    if (data.age !== undefined && data.age !== null) {
+      patientData.age = data.age
     }
 
     if (data.phone?.trim()) {
@@ -96,6 +149,7 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               <input
                 type="text"
                 {...register("firstName")}
+                style={{ textTransform: "uppercase" }}
                 className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
                   errors.firstName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
                 }`}
@@ -108,6 +162,7 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               <input
                 type="text"
                 {...register("lastName")}
+                style={{ textTransform: "uppercase" }}
                 className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
                   errors.lastName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
                 }`}
@@ -116,7 +171,7 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-white/80">Fecha de Nacimiento *</label>
+              <label className="mb-1 block text-sm font-medium text-white/80">Fecha de Nacimiento</label>
               <input
                 type="date"
                 {...register("dateOfBirth")}
@@ -125,6 +180,19 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
                 }`}
               />
               {errors.dateOfBirth && <p className="mt-1 text-xs text-red-400">{errors.dateOfBirth.message}</p>}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-white/80">Edad (Años)</label>
+              <input
+                type="number"
+                {...register("age")}
+                placeholder="Ej. 25"
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
+                  errors.age ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                }`}
+              />
+              {errors.age && <p className="mt-1 text-xs text-red-400">{errors.age.message}</p>}
             </div>
 
             <div>
@@ -141,7 +209,7 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               {errors.sex && <p className="mt-1 text-xs text-red-400">{errors.sex.message}</p>}
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Teléfono (Opcional)</label>
               <input
                 type="tel"

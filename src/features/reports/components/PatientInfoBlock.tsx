@@ -10,20 +10,22 @@ interface PatientInfoBlockProps {
 }
 
 export function PatientInfoBlock({ patient, orderDate, referringDoctor }: PatientInfoBlockProps) {
-  // Calculate age approximation - safely handle Timestamp or plain object
-  let age = 0
-  try {
-    const raw = patient.dateOfBirth
-    const dob = raw instanceof Timestamp
-      ? raw.toDate()
-      : typeof raw === "object" && raw !== null && "seconds" in raw
-        ? new Date((raw as any).seconds * 1000)
-        : new Date(raw as any)
-    const ageDifMs = Date.now() - dob.getTime()
-    const ageDate = new Date(ageDifMs)
-    age = Math.abs(ageDate.getUTCFullYear() - 1970)
-  } catch {
-    age = 0
+  // Calculate age approximation - safely handle Timestamp, plain object or direct age
+  let age = patient.age || 0
+  if (!age && patient.dateOfBirth) {
+    try {
+      const raw = patient.dateOfBirth
+      const dob = raw instanceof Timestamp
+        ? raw.toDate()
+        : typeof raw === "object" && raw !== null && "seconds" in raw
+          ? new Date((raw as any).seconds * 1000)
+          : new Date(raw as any)
+      const ageDifMs = Date.now() - dob.getTime()
+      const ageDate = new Date(ageDifMs)
+      age = Math.abs(ageDate.getUTCFullYear() - 1970)
+    } catch {
+      age = 0
+    }
   }
 
   const dateStr = orderDate.toLocaleDateString("es-ES", {

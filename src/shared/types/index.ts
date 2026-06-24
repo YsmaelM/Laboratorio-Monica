@@ -22,7 +22,8 @@ export interface Patient {
   nationalId: string
   firstName: string
   lastName: string
-  dateOfBirth: Timestamp
+  dateOfBirth?: Timestamp
+  age?: number
   sex: "M" | "F"
   phone?: string
   email?: string
@@ -36,14 +37,15 @@ export interface PatientSnapshot {
   nationalId: string
   firstName: string
   lastName: string
-  dateOfBirth: Timestamp
+  dateOfBirth?: Timestamp
+  age?: number
   sex: "M" | "F"
 }
 
 // ─────────────────────────────────────────────
 // Test Catalog
 // ─────────────────────────────────────────────
-export type TestFormat = "simple" | "hematology" | "urinalysis" | "stool" | "culture"
+export type TestFormat = "simple" | "custom" | "hematology" | "urinalysis" | "stool" | "culture"
 
 export interface RefRange {
   male:    { min: number; max: number }
@@ -51,10 +53,23 @@ export interface RefRange {
   child?:  { min: number; max: number }
 }
 
+export interface ReferenceValue {
+  type: "single_point" | "two_point" | "group"
+  min?: number
+  max?: number
+  groups?: {
+    name: string
+    type: "single_point" | "two_point"
+    min?: number
+    max: number
+  }[]
+}
+
 export interface SimpleTestDefaults {
   unit:      string
   method:    string
-  refRanges: RefRange
+  refRanges?: RefRange
+  refValue?:  ReferenceValue
 }
 
 export interface ProfileField {
@@ -64,6 +79,7 @@ export interface ProfileField {
   options?:      string[]
   unit?:         string
   refRanges?:    RefRange
+  refValue?:     ReferenceValue
   defaultValue?: string | number
 }
 

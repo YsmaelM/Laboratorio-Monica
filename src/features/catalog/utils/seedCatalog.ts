@@ -17,10 +17,13 @@ const INITIAL_CATALOG: Omit<TestCatalogItem, "id">[] = [
     simpleDefaults: {
       unit: "mg/dL",
       method: "Enzimático",
-      refRanges: {
-        male: { min: 70, max: 100 },
-        female: { min: 70, max: 100 },
-        child: { min: 60, max: 100 },
+      refValue: {
+        type: "group",
+        groups: [
+          { name: "Hombres", type: "two_point", min: 70, max: 100 },
+          { name: "Mujeres", type: "two_point", min: 70, max: 100 },
+          { name: "Niños", type: "two_point", min: 60, max: 100 },
+        ],
       },
     },
   },
@@ -35,10 +38,13 @@ const INITIAL_CATALOG: Omit<TestCatalogItem, "id">[] = [
     simpleDefaults: {
       unit: "mg/dL",
       method: "Ureasa",
-      refRanges: {
-        male: { min: 15, max: 45 },
-        female: { min: 15, max: 40 },
-        child: { min: 10, max: 35 },
+      refValue: {
+        type: "group",
+        groups: [
+          { name: "Hombres", type: "two_point", min: 15, max: 45 },
+          { name: "Mujeres", type: "two_point", min: 15, max: 40 },
+          { name: "Niños", type: "two_point", min: 10, max: 35 },
+        ],
       },
     },
   },
@@ -53,9 +59,12 @@ const INITIAL_CATALOG: Omit<TestCatalogItem, "id">[] = [
     simpleDefaults: {
       unit: "mg/dL",
       method: "Picrato Alcalino",
-      refRanges: {
-        male: { min: 0.7, max: 1.3 },
-        female: { min: 0.5, max: 1.1 },
+      refValue: {
+        type: "group",
+        groups: [
+          { name: "Hombres", type: "two_point", min: 0.7, max: 1.3 },
+          { name: "Mujeres", type: "two_point", min: 0.5, max: 1.1 },
+        ],
       },
     },
   },
@@ -70,9 +79,12 @@ const INITIAL_CATALOG: Omit<TestCatalogItem, "id">[] = [
     simpleDefaults: {
       unit: "mg/dL",
       method: "Enzimático",
-      refRanges: {
-        male: { min: 0, max: 200 },
-        female: { min: 0, max: 200 },
+      refValue: {
+        type: "group",
+        groups: [
+          { name: "Hombres", type: "two_point", min: 0, max: 200 },
+          { name: "Mujeres", type: "two_point", min: 0, max: 200 },
+        ],
       },
     },
   },
@@ -87,9 +99,12 @@ const INITIAL_CATALOG: Omit<TestCatalogItem, "id">[] = [
     simpleDefaults: {
       unit: "mg/dL",
       method: "Enzimático",
-      refRanges: {
-        male: { min: 0, max: 150 },
-        female: { min: 0, max: 150 },
+      refValue: {
+        type: "group",
+        groups: [
+          { name: "Hombres", type: "two_point", min: 0, max: 150 },
+          { name: "Mujeres", type: "two_point", min: 0, max: 150 },
+        ],
       },
     },
   },

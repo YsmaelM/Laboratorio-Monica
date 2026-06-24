@@ -46,6 +46,7 @@ export function useOrderMutation() {
         firstName: patient.firstName,
         lastName: patient.lastName,
         dateOfBirth: patient.dateOfBirth,
+        age: patient.age,
         sex: patient.sex,
       }
 
