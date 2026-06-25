@@ -1,7 +1,7 @@
-import { Edit2, Trash2, Search, Loader2, FileText, X } from "lucide-react"
+import { Edit2, Trash2, Search, Loader2, X, AlertCircle } from "lucide-react"
 import type { TestCatalogItem } from "@/shared/types"
 import { useState, useEffect } from "react"
-import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import toast from "react-hot-toast"
 
@@ -17,7 +17,7 @@ interface CatalogTableProps {
 
 
 
-export default function CatalogTable({ items, onEdit, onDelete }: CatalogTableProps) {
+export default function CatalogTable({ items, onEdit }: CatalogTableProps) {
 
   const [test, setTest] = useState<TestCatalogItem[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -104,7 +104,10 @@ export default function CatalogTable({ items, onEdit, onDelete }: CatalogTablePr
           ) : filteredTests.length === 0 ? (
             <tr>
               <td colSpan={6} className="px-6 py-12 text-center text-white/40">
-                No se encontraron pruebas.
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-white/30" />
+                  <span>No se encontraron pruebas.</span>
+                </div>
               </td>
             </tr>
           ) : (filteredTests.map((item) => (
