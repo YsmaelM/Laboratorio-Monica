@@ -81,11 +81,22 @@ export function createTestEntry(catalogItem: TestCatalogItem): TestEntry {
       }
 
     case "custom":
+      const initialData: Record<string, string> = {}
+      const template = catalogItem.customTemplate ?? { rows: [] }
+      template.rows.forEach((row) => {
+        if (row.type === "test" || row.type === "simple") {
+          row.columns.forEach((col) => {
+            if (col.defaultValue) {
+              initialData[`${row.id}_${col.id}`] = col.defaultValue
+            }
+          })
+        }
+      })
       return {
         ...base,
         format: "custom",
-        customTemplate: catalogItem.customTemplate ?? { rows: [] },
-        data: {},
+        customTemplate: template,
+        data: initialData,
       }
 
     default:

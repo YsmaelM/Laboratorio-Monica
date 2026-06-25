@@ -15,6 +15,8 @@ export function CustomPdfSection({ entry }: CustomPdfSectionProps) {
     )
   }
 
+  let simpleRowCount = 0
+
   return (
     <View>
       {customTemplate.rows.map((row) => {
@@ -62,17 +64,62 @@ export function CustomPdfSection({ entry }: CustomPdfSectionProps) {
                 {row.columns.map((col) => {
                   const flex = (col.width ?? 1) / totalWeight
                   const fieldKey = `${row.id}_${col.id}`
-                  const value = data[fieldKey] ?? ""
+                  const value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? col.defaultValue ?? "")
                   return (
                     <Text
                       key={col.id}
-                      style={[s.tableCell, { flex }]}
+                      style={[
+                        s.tableCell,
+                        { flex },
+                        col.isHeaderOnly ? { fontFamily: "Helvetica-Bold" } : {}
+                      ]}
                     >
                       {value || "—"}
                     </Text>
                   )
                 })}
               </View>
+            </View>
+          )
+        }
+
+        // ── Simple row ─────────────────────────────────────────────
+        if (row.type === "simple" && row.columns.length > 0) {
+          const totalWeight = row.columns.reduce((acc, c) => acc + (c.width ?? 1), 0)
+          const isOdd = simpleRowCount % 2 !== 0
+          simpleRowCount++
+
+          return (
+            <View
+              key={row.id}
+              style={[
+                s.tableRow,
+                {
+                  backgroundColor: isOdd ? "#f8fafc" : "#ffffff",
+                  paddingVertical: 5.5,
+                  paddingHorizontal: 6,
+                  borderBottomWidth: 0.5,
+                  borderBottomColor: "#e2e8f0",
+                }
+              ]}
+            >
+              {row.columns.map((col) => {
+                const flex = (col.width ?? 1) / totalWeight
+                const fieldKey = `${row.id}_${col.id}`
+                const value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? col.defaultValue ?? "")
+                return (
+                  <Text
+                    key={col.id}
+                    style={[
+                      s.tableCell,
+                      { flex, fontSize: 8.5 },
+                      col.isHeaderOnly ? { fontFamily: "Helvetica-Bold" } : {}
+                    ]}
+                  >
+                    {value || "—"}
+                  </Text>
+                )
+              })}
             </View>
           )
         }

@@ -8,7 +8,7 @@ import {
 } from "lucide-react"
 import type {
   CustomFormatTemplate, FormatRow, FormatColumn,
-  EmptyRow, HeaderRow, TestRow,
+  EmptyRow, HeaderRow, TestRow, SimpleRow,
 } from "@/shared/types"
 import DropdownOptionsEditor from "./DropdownOptionsEditor"
 import FormatPreview from "./FormatPreview"
@@ -42,6 +42,7 @@ const COL_TYPE_COLORS: Record<ColType, string> = {
 const makeEmpty  = (): EmptyRow  => ({ id: uid(), type: "empty" })
 const makeHeader = (): HeaderRow => ({ id: uid(), type: "header", text: "" })
 const makeTest   = (): TestRow   => ({ id: uid(), type: "test", columns: [] })
+const makeSimple = (): SimpleRow => ({ id: uid(), type: "simple", columns: [] })
 const makeColumn = (): FormatColumn => ({
   id: uid(),
   label: "",
@@ -112,7 +113,16 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
       {/* Type selector */}
       <select
         value={col.type}
-        onChange={(e) => onUpdate({ ...col, type: e.target.value as FormatColumn["type"], options: e.target.value === "select" ? [] : undefined })}
+        onChange={(e) => {
+          const newType = e.target.value as FormatColumn["type"]
+          const isFixedDefault = newType === "reference" || newType === "unit"
+          onUpdate({
+            ...col,
+            type: newType,
+            isFixed: isFixedDefault ? true : col.isFixed,
+            options: newType === "select" ? [] : undefined
+          })
+        }}
         className="w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-1.5 text-sm text-white focus:border-primary-500 focus:outline-none"
       >
         {COL_TYPE_OPTIONS.map(opt => (
@@ -134,6 +144,62 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
           className="flex-1 accent-primary-500"
         />
         <span className="w-4 text-right text-xs text-white/60">{col.width ?? 1}</span>
+      </div>
+
+      {/* Default value & isFixed option */}
+      <div className="space-y-2 border-t border-white/5 pt-2">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id={`headerOnly-${col.id}`}
+            checked={col.isHeaderOnly ?? false}
+            onChange={(e) => {
+              const checked = e.target.checked
+              onUpdate({
+                ...col,
+                isHeaderOnly: checked,
+                isFixed: checked ? false : col.isFixed,
+                defaultValue: checked ? "" : col.defaultValue
+              })
+            }}
+            className="h-4 w-4 rounded border-white/20 bg-white/5 text-primary-500 focus:ring-primary-500"
+          />
+          <label htmlFor={`headerOnly-${col.id}`} className="text-[11px] font-medium text-white/70 cursor-pointer">
+            Solo Membrete (Sin valor)
+          </label>
+        </div>
+
+        {!col.isHeaderOnly && (
+          <>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id={`fixed-${col.id}`}
+                checked={col.isFixed ?? (col.type === "reference" || col.type === "unit")}
+                onChange={(e) => onUpdate({ ...col, isFixed: e.target.checked })}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 text-primary-500 focus:ring-primary-500"
+              />
+              <label htmlFor={`fixed-${col.id}`} className="text-[11px] font-medium text-white/70 cursor-pointer">
+                Valor Fijo (no editable)
+              </label>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-white/40 block">Valor Fijo / Por Defecto:</label>
+              <input
+                type="text"
+                value={col.defaultValue ?? ""}
+                onChange={(e) => onUpdate({ ...col, defaultValue: e.target.value })}
+                placeholder={
+                  col.type === "reference" ? "Ej: 4.5 - 11.0" :
+                  col.type === "unit" ? "Ej: mg/dL, %" :
+                  "Valor predeterminado..."
+                }
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-white/30 focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Dropdown options (only for select type) */}
@@ -168,41 +234,43 @@ interface RowEditorProps {
   onUpdate: (row: FormatRow) => void
   onRemove: () => void
   onMove: (dir: "up" | "down") => void
+  onCopyColumnsFromAbove?: () => void
 }
 
-function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove }: RowEditorProps) {
+function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopyColumnsFromAbove }: RowEditorProps) {
   const ROW_META: Record<string, { label: string; color: string }> = {
     empty:  { label: "Fila Vacía",  color: "border-white/20 text-white/40" },
     header: { label: "Membrete",    color: "border-yellow-500/40 text-yellow-400" },
     test:   { label: "Fila de Prueba", color: "border-primary-500/40 text-primary-400" },
+    simple: { label: "Fila Simple", color: "border-emerald-500/40 text-emerald-400" },
   }
   const meta = ROW_META[row.type] || { label: row.type, color: "border-white/20 text-white/40" }
 
   const addColumn = () => {
-    if (row.type !== "test") return
-    const updated: TestRow = { ...row, columns: [...row.columns, makeColumn()] }
+    if (row.type !== "test" && row.type !== "simple") return
+    const updated = { ...row, columns: [...row.columns, makeColumn()] }
     onUpdate(updated)
   }
 
   const updateColumn = (i: number, col: FormatColumn) => {
-    if (row.type !== "test") return
+    if (row.type !== "test" && row.type !== "simple") return
     const cols = [...row.columns]
     cols[i] = col
-    onUpdate({ ...row, columns: cols })
+    onUpdate({ ...row, columns: cols } as any)
   }
 
   const removeColumn = (i: number) => {
-    if (row.type !== "test") return
-    onUpdate({ ...row, columns: row.columns.filter((_, idx) => idx !== i) })
+    if (row.type !== "test" && row.type !== "simple") return
+    onUpdate({ ...row, columns: row.columns.filter((_, idx) => idx !== i) } as any)
   }
 
   const moveColumn = (i: number, dir: "left" | "right") => {
-    if (row.type !== "test") return
+    if (row.type !== "test" && row.type !== "simple") return
     const cols = [...row.columns]
     const swap = dir === "left" ? i - 1 : i + 1
     if (swap < 0 || swap >= cols.length) return
     ;[cols[i], cols[swap]] = [cols[swap], cols[i]]
-    onUpdate({ ...row, columns: cols })
+    onUpdate({ ...row, columns: cols } as any)
   }
 
   return (
@@ -261,12 +329,23 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove }: RowE
           />
         )}
 
-        {row.type === "test" && (
+        {(row.type === "test" || row.type === "simple") && (
           <div className="space-y-3">
             {row.columns.length === 0 ? (
-              <p className="text-sm text-white/30 italic">
-                Esta fila no tiene columnas aún. Agrega al menos una columna.
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-white/30 italic">
+                  Esta fila no tiene columnas aún. Agrega columnas o copia la estructura.
+                </p>
+                {onCopyColumnsFromAbove && (
+                  <button
+                    type="button"
+                    onClick={onCopyColumnsFromAbove}
+                    className="text-xs font-semibold text-primary-400 hover:underline"
+                  >
+                    Copiar estructura anterior
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {row.columns.map((col, i) => (
@@ -282,14 +361,25 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove }: RowE
                 ))}
               </div>
             )}
-            <button
-              type="button"
-              onClick={addColumn}
-              className="flex items-center gap-1.5 rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-400 hover:bg-primary-500/20 transition"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Agregar Columna
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={addColumn}
+                className="flex items-center gap-1.5 rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-400 hover:bg-primary-500/20 transition"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Agregar Columna
+              </button>
+              {row.columns.length === 0 && onCopyColumnsFromAbove && (
+                <button
+                  type="button"
+                  onClick={onCopyColumnsFromAbove}
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 hover:bg-white/5 transition"
+                >
+                  Usar misma estructura de arriba
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -308,7 +398,14 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
   }, [onChange])
 
   const addRow = (type: FormatRow["type"]) => {
-    const newRow = type === "empty" ? makeEmpty() : type === "header" ? makeHeader() : makeTest()
+    const newRow =
+      type === "empty"
+        ? makeEmpty()
+        : type === "header"
+        ? makeHeader()
+        : type === "simple"
+        ? makeSimple()
+        : makeTest()
     setRows([...rows, newRow])
   }
 
@@ -357,7 +454,15 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
           className="flex items-center gap-1.5 rounded-lg border border-primary-500/30 bg-primary-500/10 px-3 py-1.5 text-xs font-medium text-primary-400 hover:bg-primary-500/20 transition"
         >
           <Plus className="h-3.5 w-3.5" />
-          Fila de Prueba
+          Fila de Prueba (Cabecera)
+        </button>
+        <button
+          type="button"
+          onClick={() => addRow("simple")}
+          className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Fila Simple
         </button>
         <div className="flex-1" />
         <button
@@ -396,6 +501,25 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
                 onUpdate={(r) => updateRow(i, r)}
                 onRemove={() => removeRow(i)}
                 onMove={(dir) => moveRow(i, dir)}
+                onCopyColumnsFromAbove={
+                  row.type === "simple" && i > 0
+                    ? () => {
+                        // Find the first preceding TestRow
+                        for (let j = i - 1; j >= 0; j--) {
+                          if (rows[j].type === "test" || rows[j].type === "simple") {
+                            const prevRow = rows[j] as TestRow | SimpleRow
+                            // Deep copy columns but generate new IDs
+                            const newCols = prevRow.columns.map((c: FormatColumn) => ({
+                              ...c,
+                              id: crypto.randomUUID(),
+                            }))
+                            updateRow(i, { ...row, columns: newCols })
+                            break
+                          }
+                        }
+                      }
+                    : undefined
+                }
               />
             ))}
           </div>

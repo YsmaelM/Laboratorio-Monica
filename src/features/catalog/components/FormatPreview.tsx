@@ -69,7 +69,9 @@ export default function FormatPreview({ template, className = "" }: FormatPrevie
                 {row.columns.map((col) => (
                   <div key={col.id} className="min-w-0">
                     <div className="mb-0.5 text-[10px] font-medium text-white/50 truncate">{col.label || "Sin nombre"}</div>
-                    {col.type === "select" ? (
+                    {col.isHeaderOnly ? (
+                      <div className="h-6" />
+                    ) : col.type === "select" ? (
                       <div className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/60 truncate">
                         {col.options && col.options.length > 0
                           ? col.options[0] + " ▾"
@@ -78,17 +80,42 @@ export default function FormatPreview({ template, className = "" }: FormatPrevie
                       </div>
                     ) : col.type === "reference" ? (
                       <div className="rounded-md border border-primary-500/20 bg-primary-500/10 px-2 py-1 text-xs text-primary-400">
-                        Val. Ref.
+                        {col.defaultValue || "Val. Ref."}
                       </div>
                     ) : col.type === "unit" ? (
                       <div className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/40 italic">
-                        Unidad
+                        {col.defaultValue || "Unidad"}
                       </div>
                     ) : (
                       <div className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/40">
-                        {COL_TYPE_LABELS[col.type] ?? col.type}...
+                        {col.defaultValue || `${COL_TYPE_LABELS[col.type] ?? col.type}...`}
                       </div>
                     )}
+                  </div>
+                ))}
+              </div>
+            )
+          }
+
+          if (row.type === "simple") {
+            if (row.columns.length === 0) {
+              return (
+                <div key={row.id} className="py-1 px-1 text-xs text-white/30 italic">
+                  Fila simple sin columnas
+                </div>
+              )
+            }
+            return (
+              <div
+                key={row.id}
+                className="grid gap-1 py-1.5 px-2 rounded border border-white/5 odd:bg-white/5 even:bg-white/[0.02]"
+                style={{ gridTemplateColumns: row.columns.map(c => `${c.width ?? 1}fr`).join(" ") }}
+              >
+                {row.columns.map((col) => (
+                  <div key={col.id} className="min-w-0 flex items-center">
+                    <span className={`text-xs truncate ${col.isFixed ? "text-white/90" : "text-white/40 italic"}`}>
+                      {col.isHeaderOnly ? "" : col.defaultValue || (col.isFixed ? "" : col.label || "...")}
+                    </span>
                   </div>
                 ))}
               </div>

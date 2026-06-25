@@ -101,6 +101,9 @@ export interface FormatColumn {
   type:      "text" | "number" | "select" | "reference" | "unit"
   options?:  string[]                          // Solo para type "select"
   width?:    number                            // Ancho relativo (1–12)
+  defaultValue?: string                        // Valor por defecto / fijo
+  isFixed?:  boolean                           // Si es un valor fijo (no editable)
+  isHeaderOnly?: boolean                       // Si es solo cabecera/membrete (sin valor)
 }
 
 export interface EmptyRow {
@@ -120,7 +123,13 @@ export interface TestRow {
   columns: FormatColumn[]
 }
 
-export type FormatRow = EmptyRow | HeaderRow | TestRow
+export interface SimpleRow {
+  id:      string
+  type:    "simple"
+  columns: FormatColumn[]
+}
+
+export type FormatRow = EmptyRow | HeaderRow | TestRow | SimpleRow
 
 export interface CustomFormatTemplate {
   rows: FormatRow[]

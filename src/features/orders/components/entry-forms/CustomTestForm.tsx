@@ -86,6 +86,8 @@ export default function CustomTestForm({ entry, onChange }: CustomTestFormProps)
     )
   }
 
+  let simpleRowCount = 0
+
   return (
     <div className="space-y-3">
       {customTemplate.rows.map((row) => {
@@ -131,12 +133,71 @@ export default function CustomTestForm({ entry, onChange }: CustomTestFormProps)
                   <label className="mb-1 block text-xs font-medium text-white/50">
                     {col.label || "—"}
                   </label>
-                  <CellInput
-                    col={col}
-                    rowId={row.id}
-                    value={data[`${row.id}_${col.id}`] ?? ""}
-                    onChange={updateField}
-                  />
+                  {col.isHeaderOnly ? (
+                    <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm font-semibold text-primary-400">
+                      {col.label}
+                    </div>
+                  ) : col.isFixed ? (
+                    <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm text-white/70">
+                      {data[`${row.id}_${col.id}`] ?? col.defaultValue ?? ""}
+                    </div>
+                  ) : (
+                    <CellInput
+                      col={col}
+                      rowId={row.id}
+                      value={data[`${row.id}_${col.id}`] ?? ""}
+                      onChange={updateField}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )
+        }
+
+        // ── Simple row ────────────────────────────────────
+        if (row.type === "simple") {
+          if (row.columns.length === 0) {
+            return (
+              <div key={row.id} className="text-xs text-white/30 italic">
+                (fila simple sin columnas)
+              </div>
+            )
+          }
+
+          const isOdd = simpleRowCount % 2 !== 0
+          simpleRowCount++
+
+          return (
+            <div
+              key={row.id}
+              className={`grid gap-3 items-center py-2 px-3 rounded-xl border border-white/5 ${
+                isOdd ? "bg-white/[0.04]" : "bg-white/[0.01]"
+              }`}
+              style={{
+                gridTemplateColumns: row.columns
+                  .map((c) => `${c.width ?? 1}fr`)
+                  .join(" "),
+              }}
+            >
+              {row.columns.map((col) => (
+                <div key={col.id}>
+                  {col.isHeaderOnly ? (
+                    <div className="flex h-9 items-center px-1 text-sm font-semibold text-primary-400 truncate">
+                      {col.label}
+                    </div>
+                  ) : col.isFixed ? (
+                    <div className="flex h-9 items-center px-1 text-sm font-medium text-white/70 truncate">
+                      {data[`${row.id}_${col.id}`] ?? col.defaultValue ?? ""}
+                    </div>
+                  ) : (
+                    <CellInput
+                      col={col}
+                      rowId={row.id}
+                      value={data[`${row.id}_${col.id}`] ?? ""}
+                      onChange={updateField}
+                    />
+                  )}
                 </div>
               ))}
             </div>
