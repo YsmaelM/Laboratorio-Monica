@@ -60,6 +60,20 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
 
   const watchedDob = watch("dateOfBirth")
 
+  // Pre-fill the cédula whenever the modal opens with a new nationalId
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        nationalId: initialNationalId,
+        sex: "M",
+        dateOfBirth: "",
+        firstName: "",
+        lastName: "",
+        phone: "",
+      })
+    }
+  }, [isOpen, initialNationalId, reset])
+
   useEffect(() => {
     if (watchedDob) {
       const parts = watchedDob.split("-")
