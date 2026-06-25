@@ -14,7 +14,7 @@ export function HematologyPdfSection({ entry }: HematologyPdfSectionProps) {
       {data.sections.map((section, idx) => (
         <View key={idx} style={{ marginBottom: 8 }} wrap={false}>
           <Text style={s.subSectionTitle}>{section.sectionName}</Text>
-          
+
           <View style={s.tableHeader}>
             <Text style={[s.tableHeaderText, { flex: 2 }]}>Parámetro</Text>
             <Text style={[s.tableHeaderText, { flex: 1 }]}>Resultado</Text>
@@ -25,7 +25,7 @@ export function HematologyPdfSection({ entry }: HematologyPdfSectionProps) {
           {section.results.map((row, rIdx) => {
             let isHigh = false
             let isLow = false
-            
+
             if (row.refRange && typeof row.value === 'string' && !isNaN(Number(row.value))) {
               const val = Number(row.value)
               const parts = row.refRange.split('-').map(p => Number(p.trim()))
