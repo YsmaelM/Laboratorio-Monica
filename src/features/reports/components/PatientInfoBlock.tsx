@@ -44,11 +44,11 @@ export function PatientInfoBlock({ patient, orderDate, referringDoctor }: Patien
       <View style={s.patientCol}>
         <Text style={s.patientLabel}>Paciente</Text>
         <Text style={s.patientValue}>{patient.firstName} {patient.lastName}</Text>
-        
+
         <Text style={s.patientLabel}>ID / Cédula</Text>
         <Text style={s.patientValue}>{patient.nationalId}</Text>
       </View>
-      
+
       <View style={s.patientCol}>
         <Text style={s.patientLabel}>Edad / Sexo</Text>
         <Text style={s.patientValue}>
@@ -62,9 +62,9 @@ export function PatientInfoBlock({ patient, orderDate, referringDoctor }: Patien
       <View style={s.patientCol}>
         <Text style={s.patientLabel}>Fecha de Orden</Text>
         <Text style={s.patientValue}>{dateStr}</Text>
-
+        {/* 
         <Text style={s.patientLabel}>Hora</Text>
-        <Text style={s.patientValue}>{timeStr}</Text>
+        <Text style={s.patientValue}>{timeStr}</Text> */}
       </View>
     </View>
   )

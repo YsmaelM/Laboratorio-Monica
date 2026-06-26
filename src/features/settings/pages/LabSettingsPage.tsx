@@ -16,6 +16,7 @@ export default function LabSettingsPage() {
   const [licenseNumber, setLicenseNumber] = useState("")
   const [footerText, setFooterText] = useState("")
   const [signatureUrl, setSignatureUrl] = useState("")
+  const [logoUrl, setLogoUrl] = useState("")
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -30,6 +31,7 @@ export default function LabSettingsPage() {
           setLicenseNumber(data.licenseNumber || "")
           setFooterText(data.footerText || "")
           setSignatureUrl(data.signatureUrl || "/firma.jpg")
+          setLogoUrl(data.logoUrl || "")
         }
       } catch (err) {
         console.error("Error fetching lab config:", err)
@@ -40,6 +42,19 @@ export default function LabSettingsPage() {
     }
     fetchConfig()
   }, [])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setter(reader.result)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -53,7 +68,8 @@ export default function LabSettingsPage() {
         phone,
         licenseNumber,
         footerText,
-        signatureUrl
+        signatureUrl,
+        logoUrl,
       }, { merge: true })
       
       toast.success("Configuración guardada exitosamente")
@@ -133,16 +149,48 @@ export default function LabSettingsPage() {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-white/80">URL Firma Digital (PNG con fondo transparente)</label>
-                <input
-                  type="url"
-                  value={signatureUrl}
-                  onChange={(e) => setSignatureUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/20 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-                <p className="mt-1 text-xs text-white/40">URL de la imagen para insertar en el pie del PDF.</p>
+              <div className="sm:col-span-2 space-y-4">
+                <label className="block text-sm font-medium text-white/80">Logo del Laboratorio (Opcional)</label>
+                <div className="flex items-center gap-4">
+                  {logoUrl && (
+                    <img
+                      src={logoUrl}
+                      alt="Logo del Laboratorio"
+                      className="h-16 w-16 object-contain rounded-xl border border-white/10 bg-white/5 p-1"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(e, setLogoUrl)}
+                      className="w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-600/20 file:text-primary-400 hover:file:bg-primary-600/30 file:cursor-pointer"
+                    />
+                    <p className="mt-1 text-xs text-white/40">Sube una imagen para el membrete de tus reportes PDF.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sm:col-span-2 space-y-4">
+                <label className="block text-sm font-medium text-white/80">Firma Digital (PNG con fondo transparente)</label>
+                <div className="flex items-center gap-4">
+                  {signatureUrl && (
+                    <img
+                      src={signatureUrl}
+                      alt="Firma Digital"
+                      className="h-16 w-32 object-contain rounded-xl border border-white/10 bg-white/5 p-1"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(e, setSignatureUrl)}
+                      className="w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-600/20 file:text-primary-400 hover:file:bg-primary-600/30 file:cursor-pointer"
+                    />
+                    <p className="mt-1 text-xs text-white/40">Sube la firma que se insertará al final de los reportes PDF.</p>
+                  </div>
+                </div>
               </div>
 
               <div className="sm:col-span-2">

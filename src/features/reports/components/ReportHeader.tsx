@@ -20,7 +20,9 @@ export function ReportHeader({ labInfo }: ReportHeaderProps) {
         <Text style={s.labInfo}>{labInfo.address}</Text>
         <Text style={s.labInfo}>{labInfo.phone}</Text>
         {labInfo.licenseNumber ? (
-          <Text style={s.labInfo}>RNC / Lic: {labInfo.licenseNumber}</Text>
+          <Text style={s.labInfo}>M.P.P.S.: {labInfo.licenseNumber}
+            C.B.C.: {labInfo.licenseNumber}
+          </Text>
         ) : null}
       </View>
     </View>

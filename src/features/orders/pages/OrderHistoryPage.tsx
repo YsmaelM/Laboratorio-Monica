@@ -143,7 +143,7 @@ export default function OrderHistoryPage() {
                           <span className="text-xs text-white/30 px-2 py-1.5">Sin PDF</span>
                         )}
                         <a
-                          href={`/orders/new?edit=${order.id}`}
+                          href={`/newOrder?edit=${order.id}`}
                           className="inline-flex items-center justify-center rounded-lg bg-white/5 p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white"
                           title="Editar orden"
                         >
