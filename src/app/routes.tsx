@@ -5,18 +5,20 @@ import MainLayout from "@/shared/components/layout/MainLayout"
 import { Loader2 } from "lucide-react"
 
 // Lazy-loaded pages
-const LoginPage       = lazy(() => import("@/features/auth/pages/LoginPage"))
+const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"))
 const PlaceholderPage = lazy(() => import("@/app/PlaceholderPage"))
 const OrderWorkflowPage = lazy(() => import("@/features/orders/pages/OrderWorkflowPage"))
 const OrderHistoryPage = lazy(() => import("@/features/orders/pages/OrderHistoryPage"))
 const LabSettingsPage = lazy(() => import("@/features/settings/pages/LabSettingsPage"))
-
+const PatiensListPage = lazy(() => import("@/features/patients/components/PatiensListPage"))
 const CatalogManagementPage = lazy(() => import("@/features/catalog/pages/CatalogManagementPage"))
+
+
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <FullScreenSpinner />
-  if (!user)   return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
@@ -42,12 +44,13 @@ export default function AppRoutes() {
             <PrivateRoute>
               <MainLayout>
                 <Routes>
-                  <Route index element={<Navigate to="/orders/new" replace />} />
-                  <Route path="orders/new" element={<OrderWorkflowPage />} />
-                  <Route path="orders"     element={<OrderHistoryPage />} />
-                  <Route path="catalog"    element={<CatalogManagementPage />} />
-                  <Route path="settings"   element={<LabSettingsPage />} />
-                  <Route path="*"          element={<Navigate to="/orders/new" replace />} />
+                  <Route index element={<Navigate to="newOrder" replace />} />
+                  <Route path="newOrder" element={<OrderWorkflowPage />} />
+                  <Route path="orders" element={<OrderHistoryPage />} />
+                  <Route path="catalog" element={<CatalogManagementPage />} />
+                  <Route path="settings" element={<LabSettingsPage />} />
+                  <Route path="patiens" element={<PatiensListPage />} />
+                  <Route path="*" element={<Navigate to="newOrder" replace />} />
                 </Routes>
               </MainLayout>
             </PrivateRoute>

@@ -18,6 +18,8 @@ const patientSchema = z.object({
   ),
   sex: z.enum(["M", "F"]),
   phone: z.string().optional(),
+  email: z.string().email("Correo electrónico inválido").optional().or(z.literal("")),
+  address: z.string().optional(),
 }).refine(
   (data) => {
     const hasDob = data.dateOfBirth && data.dateOfBirth.trim() !== ""
@@ -36,12 +38,13 @@ interface QuickRegisterModalProps {
   isOpen: boolean
   onClose: () => void
   initialNationalId?: string
+  initialPatient?: Patient // Added for edit mode
   onSuccess: (patient: Patient) => void
 }
 
-export default function QuickRegisterModal({ isOpen, onClose, initialNationalId = "", onSuccess }: QuickRegisterModalProps) {
-  const { createPatient, loading, error: mutationError } = usePatientMutation()
-  
+export default function QuickRegisterModal({ isOpen, onClose, initialNationalId = "", initialPatient, onSuccess }: QuickRegisterModalProps) {
+  const { createPatient, updatePatient, loading, error: mutationError } = usePatientMutation()
+
   const {
     register,
     handleSubmit,
@@ -52,27 +55,54 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
   } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
-      nationalId: initialNationalId,
-      sex: "M",
-      dateOfBirth: "",
+      nationalId: initialPatient?.nationalId || initialNationalId,
+      firstName: initialPatient?.firstName || "",
+      lastName: initialPatient?.lastName || "",
+      sex: initialPatient?.sex || "M",
+      dateOfBirth: initialPatient?.dateOfBirth
+        ? (initialPatient.dateOfBirth.toDate ? initialPatient.dateOfBirth.toDate() : new Date(initialPatient.dateOfBirth)).toISOString().split('T')[0]
+        : "",
+      age: initialPatient?.age,
+      phone: initialPatient?.phone || "",
+      email: initialPatient?.email || "",
+      address: initialPatient?.address || "",
     }
   })
 
   const watchedDob = watch("dateOfBirth")
 
-  // Pre-fill the cédula whenever the modal opens with a new nationalId
+  // Pre-fill the data whenever the modal opens or initialPatient changes
   useEffect(() => {
     if (isOpen) {
-      reset({
-        nationalId: initialNationalId,
-        sex: "M",
-        dateOfBirth: "",
-        firstName: "",
-        lastName: "",
-        phone: "",
-      })
+      if (initialPatient) {
+        reset({
+          nationalId: initialPatient.nationalId,
+          firstName: initialPatient.firstName,
+          lastName: initialPatient.lastName,
+          sex: initialPatient.sex,
+          dateOfBirth: initialPatient.dateOfBirth
+            ? (initialPatient.dateOfBirth.toDate ? initialPatient.dateOfBirth.toDate() : new Date(initialPatient.dateOfBirth)).toISOString().split('T')[0]
+            : "",
+          age: initialPatient.age,
+          phone: initialPatient.phone || "",
+          email: initialPatient.email || "",
+          address: initialPatient.address || "",
+        })
+      } else {
+        reset({
+          nationalId: initialNationalId,
+          sex: "M",
+          dateOfBirth: "",
+          firstName: "",
+          lastName: "",
+          phone: "",
+          email: "",
+          address: "",
+          age: undefined,
+        })
+      }
     }
-  }, [isOpen, initialNationalId, reset])
+  }, [isOpen, initialNationalId, initialPatient, reset])
 
   useEffect(() => {
     if (watchedDob) {
@@ -106,7 +136,7 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
       const adjustedDob = new Date(dobDate.getTime() + Math.abs(dobDate.getTimezoneOffset() * 60000))
       dob = Timestamp.fromDate(adjustedDob)
     }
-    
+
     const patientData: Omit<Patient, "id" | "createdAt" | "updatedAt"> = {
       nationalId: data.nationalId,
       firstName: data.firstName.toUpperCase().trim(),
@@ -124,21 +154,41 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
     if (data.phone?.trim()) {
       patientData.phone = data.phone.trim()
     }
+    if (data.email?.trim()) {
+      patientData.email = data.email.trim().toLowerCase()
+    }
+    if (data.address?.trim()) {
+      patientData.address = data.address.trim()
+    }
 
-    const newPatient = await createPatient(patientData)
+    const newPatient = initialPatient
+      ? { ...initialPatient, ...patientData } as Patient
+      : null
 
-    if (newPatient) {
-      reset()
-      onSuccess(newPatient)
-      onClose()
+    if (initialPatient) {
+      const ok = await updatePatient(initialPatient.id, patientData)
+      if (ok && newPatient) {
+        reset()
+        onSuccess(newPatient)
+        onClose()
+      }
+    } else {
+      const created = await createPatient(patientData)
+      if (created) {
+        reset()
+        onSuccess(created)
+        onClose()
+      }
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-950/80 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg animate-slide-up rounded-2xl border border-white/10 bg-surface-900 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-950/80 p-4 backdrop-blur-lg shadow-2xl">
+      <div className="relative w-full max-w-lg my-auto animate-slide-up rounded-2xl border border-white/10 bg-surface-900 shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 className="text-lg font-semibold text-white">Registrar Nuevo Paciente</h2>
+          <h2 className="text-lg font-semibold text-white">
+            {initialPatient ? "Editar Paciente" : "Registrar Nuevo Paciente"}
+          </h2>
           <button onClick={onClose} className="rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-white">
             <X className="h-5 w-5" />
           </button>
@@ -151,9 +201,8 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               <input
                 type="text"
                 {...register("nationalId")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.nationalId ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.nationalId ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.nationalId && <p className="mt-1 text-xs text-red-400">{errors.nationalId.message}</p>}
             </div>
@@ -164,9 +213,8 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
                 type="text"
                 {...register("firstName")}
                 style={{ textTransform: "uppercase" }}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.firstName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.firstName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.firstName && <p className="mt-1 text-xs text-red-400">{errors.firstName.message}</p>}
             </div>
@@ -177,9 +225,8 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
                 type="text"
                 {...register("lastName")}
                 style={{ textTransform: "uppercase" }}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.lastName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.lastName ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.lastName && <p className="mt-1 text-xs text-red-400">{errors.lastName.message}</p>}
             </div>
@@ -189,9 +236,8 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               <input
                 type="date"
                 {...register("dateOfBirth")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.dateOfBirth ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.dateOfBirth ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.dateOfBirth && <p className="mt-1 text-xs text-red-400">{errors.dateOfBirth.message}</p>}
             </div>
@@ -202,9 +248,8 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
                 type="number"
                 {...register("age")}
                 placeholder="Ej. 25"
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.age ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.age ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.age && <p className="mt-1 text-xs text-red-400">{errors.age.message}</p>}
             </div>
@@ -213,9 +258,8 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               <label className="mb-1 block text-sm font-medium text-white/80">Sexo *</label>
               <select
                 {...register("sex")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.sex ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.sex ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               >
                 <option value="M" className="bg-surface-900">Masculino</option>
                 <option value="F" className="bg-surface-900">Femenino</option>
@@ -228,6 +272,28 @@ export default function QuickRegisterModal({ isOpen, onClose, initialNationalId 
               <input
                 type="tel"
                 {...register("phone")}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-white/80">Correo Electrónico (Opcional)</label>
+              <input
+                type="email"
+                {...register("email")}
+                placeholder="ejemplo@correo.com"
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.email ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-white/80">Dirección Corta (Opcional)</label>
+              <input
+                type="text"
+                {...register("address")}
+                placeholder="Ej. Av. Duarte #45, Santo Domingo"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>

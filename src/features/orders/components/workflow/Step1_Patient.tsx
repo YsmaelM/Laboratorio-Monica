@@ -25,6 +25,7 @@ export default function Step1Patient({ selectedPatient, onPatientSelect, onNext 
   }
 
   return (
+
     <div className="space-y-6">
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-white">Paso 1: Información del Paciente</h2>
@@ -44,7 +45,7 @@ export default function Step1Patient({ selectedPatient, onPatientSelect, onNext 
             patient={selectedPatient}
             onClear={() => onPatientSelect(null)}
           />
-          
+
           <div className="flex justify-end">
             <button
               onClick={onNext}
@@ -55,13 +56,13 @@ export default function Step1Patient({ selectedPatient, onPatientSelect, onNext 
           </div>
         </div>
       )}
-
       <QuickRegisterModal
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
         initialNationalId={registerInitialId}
         onSuccess={handleRegisterSuccess}
       />
+
     </div>
   )
 }
