@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { pdf } from "@react-pdf/renderer"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { doc, updateDoc, getDoc } from "firebase/firestore"
+import { doc, updateDoc, getDoc, Timestamp } from "firebase/firestore"
 import { db, storage } from "@/shared/lib/firebase"
 import { ReportDocument } from "../components/ReportDocument"
 import type { OrderResult, LabConfig } from "@/shared/types"
@@ -9,6 +9,105 @@ import type { OrderResult, LabConfig } from "@/shared/types"
 export function useGenerateReport() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const generatePreviewPdf = async (customLabInfo?: LabConfig): Promise<string | null> => {
+    setIsGenerating(true)
+    setError(null)
+
+    try {
+      let labInfo: LabConfig
+      if (customLabInfo) {
+        labInfo = { ...customLabInfo }
+      } else {
+        const configDoc = await getDoc(doc(db, "config", "lab"))
+        if (configDoc.exists()) {
+          labInfo = configDoc.data() as LabConfig
+        } else {
+          labInfo = {
+            labName: "Laboratorio Clínico de Ejemplo",
+            address: "Dirección de Ejemplo",
+            phone: "809-555-5555",
+            signatureUrl: "/firma.jpg"
+          }
+        }
+      }
+
+      if (!labInfo.signatureUrl) {
+        labInfo.signatureUrl = "/firma.jpg"
+      }
+
+      // Create a complete, nice sample order for the preview
+      const sampleOrder: OrderResult = {
+        id: "SAMPLE-123",
+        patientId: "PAT-001",
+        patientSnapshot: {
+          firstName: "María Altagracia",
+          lastName: "González Pérez",
+          birthDate: "1990-05-15",
+          gender: "Femenino",
+          phone: "809-555-0199",
+          email: "maria.gonzalez@example.com"
+        },
+        orderDate: Timestamp.now(),
+        status: "reported",
+        referringDoctor: "Dr. Carlos Martínez",
+        tests: [
+          {
+            catalogId: "hemoglobina_gluc",
+            testName: "Hemoglobina Glicosilada (HbA1c)",
+            format: "simple",
+            status: "validated",
+            data: {
+              result: "5.8",
+              unit: "%",
+              refRange: "4.0 - 5.6",
+              method: "Inmunoensayo cromatográfico",
+              flag: "H"
+            }
+          },
+          {
+            catalogId: "colesterol_total",
+            testName: "Colesterol Total",
+            format: "simple",
+            status: "validated",
+            data: {
+              result: "185",
+              unit: "mg/dL",
+              refRange: "100 - 200",
+              method: "Enzimático colorimétrico",
+              flag: "N"
+            }
+          },
+          {
+            catalogId: "trigliceridos",
+            testName: "Triglicéridos",
+            format: "simple",
+            status: "validated",
+            data: {
+              result: "142",
+              unit: "mg/dL",
+              refRange: "35 - 150",
+              method: "Enzimático colorimétrico",
+              flag: "N"
+            }
+          }
+        ],
+        createdBy: "admin",
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      }
+
+      const blob = await pdf(<ReportDocument order={sampleOrder} labInfo={labInfo} />).toBlob()
+      const localUrl = URL.createObjectURL(blob)
+      return localUrl
+    } catch (err: any) {
+      console.error("Error generating preview PDF:", err)
+      setError(err.message || "Ocurrió un error al generar la vista previa del PDF.")
+      return null
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   const generateAndSavePdf = async (orderId: string, includeSignature: boolean = true): Promise<string | null> => {
     setIsGenerating(true)
@@ -83,5 +182,5 @@ export function useGenerateReport() {
     }
   }
 
-  return { generateAndSavePdf, isGenerating, error }
+  return { generateAndSavePdf, generatePreviewPdf, isGenerating, error }
 }

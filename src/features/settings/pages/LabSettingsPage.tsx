@@ -2,13 +2,17 @@ import { useState, useEffect, type FormEvent } from "react"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import type { LabConfig } from "@/shared/types"
-import { Loader2, Save, Building2, FileSpreadsheet } from "lucide-react"
+import { Loader2, Save, Building2, FileSpreadsheet, FileText } from "lucide-react"
 import toast from "react-hot-toast"
 import GoogleSheetsImporter from "@/features/catalog/components/GoogleSheetsImporter"
+import { useGenerateReport } from "@/features/reports/hooks/useGenerateReport"
 
 export default function LabSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isPreviewing, setIsPreviewing] = useState(false)
+  
+  const { generatePreviewPdf } = useGenerateReport()
   
   const [labName, setLabName] = useState("")
   const [address, setAddress] = useState("")
@@ -54,6 +58,31 @@ export default function LabSettingsPage() {
       }
     }
     reader.readAsDataURL(file)
+  }
+
+  const handlePreview = async () => {
+    setIsPreviewing(true)
+    try {
+      const url = await generatePreviewPdf({
+        labName,
+        address,
+        phone,
+        licenseNumber,
+        footerText,
+        signatureUrl,
+        logoUrl
+      })
+      if (url) {
+        window.open(url, "_blank")
+      } else {
+        toast.error("No se pudo generar la vista previa")
+      }
+    } catch (err) {
+      console.error("Error previewing report:", err)
+      toast.error("Error al generar la vista previa")
+    } finally {
+      setIsPreviewing(false)
+    }
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -205,10 +234,20 @@ export default function LabSettingsPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-between items-center gap-4">
+              <button
+                type="button"
+                onClick={handlePreview}
+                disabled={isPreviewing || saving}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition disabled:opacity-50"
+              >
+                {isPreviewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary-400" />}
+                {isPreviewing ? "Generando..." : "Generar Vista Previa"}
+              </button>
+
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || isPreviewing}
                 className="flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-primary-500 disabled:opacity-50"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
