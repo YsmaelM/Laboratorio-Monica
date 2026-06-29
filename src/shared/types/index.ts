@@ -108,6 +108,15 @@ export interface FormatColumn {
   defaultValue?: string                        // Valor por defecto / fijo
   isFixed?: boolean                           // Si es un valor fijo (no editable)
   isHeaderOnly?: boolean                       // Si es solo cabecera/membrete (sin valor)
+  refType?: "single_point" | "two_point" | "group" // Tipo interno del rango
+  min?: number
+  max?: number
+  groups?: {                               // Arreglo para grupos en columnas custom
+    name: string
+    type: "single_point" | "two_point"
+    min?: number
+    max: number
+  }[]
 }
 
 export interface EmptyRow {

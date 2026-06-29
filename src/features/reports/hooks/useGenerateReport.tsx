@@ -60,7 +60,7 @@ export function useGenerateReport() {
             data: {
               result: "5.8",
               unit: "%",
-              refRange: "4.0 - 5.6",
+              refValue: "4.0 - 5.6",
               method: "Inmunoensayo cromatográfico",
               flag: "H"
             }
@@ -73,7 +73,7 @@ export function useGenerateReport() {
             data: {
               result: "185",
               unit: "mg/dL",
-              refRange: "100 - 200",
+              refValue: "100 - 200",
               method: "Enzimático colorimétrico",
               flag: "N"
             }
@@ -86,7 +86,7 @@ export function useGenerateReport() {
             data: {
               result: "142",
               unit: "mg/dL",
-              refRange: "35 - 150",
+              refValue: "35 - 150",
               method: "Enzimático colorimétrico",
               flag: "N"
             }

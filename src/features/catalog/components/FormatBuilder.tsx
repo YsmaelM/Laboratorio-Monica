@@ -12,6 +12,7 @@ import type {
 } from "@/shared/types"
 import DropdownOptionsEditor from "./DropdownOptionsEditor"
 import FormatPreview from "./FormatPreview"
+import ReferenceValuesEditor from "./ReferenceValuesEditor"
 
 interface FormatBuilderProps {
   value: CustomFormatTemplate
@@ -21,27 +22,27 @@ interface FormatBuilderProps {
 
 // ─── Column type meta ────────────────────────────────────────────────────────
 const COL_TYPE_OPTIONS = [
-  { value: "text",      label: "Texto",      icon: AlignLeft },
-  { value: "number",    label: "Número",     icon: Hash },
-  { value: "select",    label: "Desplegable",icon: List },
+  { value: "text", label: "Texto", icon: AlignLeft },
+  { value: "number", label: "Número", icon: Hash },
+  { value: "select", label: "Desplegable", icon: List },
   { value: "reference", label: "Referencia", icon: BookOpen },
-  { value: "unit",      label: "Unidad",     icon: Minus },
+  { value: "unit", label: "Unidad", icon: Minus },
 ] as const
 
 type ColType = typeof COL_TYPE_OPTIONS[number]["value"]
 
 const COL_TYPE_COLORS: Record<ColType, string> = {
-  text:      "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  number:    "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  select:    "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  text: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  number: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  select: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   reference: "bg-primary-500/10 text-primary-400 border-primary-500/20",
-  unit:      "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  unit: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 }
 
 // ─── Row creators ─────────────────────────────────────────────────────────────
-const makeEmpty  = (): EmptyRow  => ({ id: uid(), type: "empty" })
+const makeEmpty = (): EmptyRow => ({ id: uid(), type: "empty" })
 const makeHeader = (): HeaderRow => ({ id: uid(), type: "header", text: "" })
-const makeTest   = (): TestRow   => ({ id: uid(), type: "test", columns: [] })
+const makeTest = (): TestRow => ({ id: uid(), type: "test", columns: [] })
 const makeSimple = (): SimpleRow => ({ id: uid(), type: "simple", columns: [] })
 const makeColumn = (): FormatColumn => ({
   id: uid(),
@@ -192,12 +193,43 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
                 onChange={(e) => onUpdate({ ...col, defaultValue: e.target.value })}
                 placeholder={
                   col.type === "reference" ? "Ej: 4.5 - 11.0" :
-                  col.type === "unit" ? "Ej: mg/dL, %" :
-                  "Valor predeterminado..."
+                    col.type === "unit" ? "Ej: mg/dL, %" :
+                      "Valor predeterminado..."
                 }
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-white/30 focus:border-primary-500 focus:outline-none"
               />
             </div>
+
+            {/* ── NUEVA SECCIÓN: LIMITES NUMÉRICOS PARA BANDERAS CUSTOM ── */}
+            {col.type === "reference" && (
+              <div className="mt-3 pt-3 border-t border-white/5 space-y-2">
+                <ReferenceValuesEditor
+                  // Creamos un adaptador para transformar las propiedades de la columna al formato del Editor
+                  value={{
+                    type: col.refType || "two_point",
+                    min: col.min,
+                    max: col.max,
+                    groups: col.groups
+                  }}
+                  // Al cambiar los valores en el editor, los esparcimos en las propiedades nativas de la columna
+                  onChange={(newValue) => {
+                    onUpdate({
+                      ...col,
+                      refType: newValue.type,
+                      min: newValue.type !== "group" ? newValue.min : undefined,
+                      max: newValue.type !== "group" ? newValue.max : undefined,
+                      groups: newValue.type === "group" ? newValue.groups : undefined,
+                      // Automáticamente actualizamos el texto por defecto que ve el paciente si no es de tipo grupo
+                      defaultValue: newValue.type === "two_point"
+                        ? `${newValue.min ?? 0} - ${newValue.max ?? 0}`
+                        : newValue.type === "single_point"
+                          ? `Hasta ${newValue.max ?? 0}`
+                          : "Ver desglose por grupos" // Texto descriptivo si es hormonal/grupal
+                    })
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -239,9 +271,9 @@ interface RowEditorProps {
 
 function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopyColumnsFromAbove }: RowEditorProps) {
   const ROW_META: Record<string, { label: string; color: string }> = {
-    empty:  { label: "Fila Vacía",  color: "border-white/20 text-white/40" },
-    header: { label: "Membrete",    color: "border-yellow-500/40 text-yellow-400" },
-    test:   { label: "Fila de Prueba", color: "border-primary-500/40 text-primary-400" },
+    empty: { label: "Fila Vacía", color: "border-white/20 text-white/40" },
+    header: { label: "Membrete", color: "border-yellow-500/40 text-yellow-400" },
+    test: { label: "Fila de Prueba", color: "border-primary-500/40 text-primary-400" },
     simple: { label: "Fila Simple", color: "border-emerald-500/40 text-emerald-400" },
   }
   const meta = ROW_META[row.type] || { label: row.type, color: "border-white/20 text-white/40" }
@@ -269,7 +301,7 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopy
     const cols = [...row.columns]
     const swap = dir === "left" ? i - 1 : i + 1
     if (swap < 0 || swap >= cols.length) return
-    ;[cols[i], cols[swap]] = [cols[swap], cols[i]]
+      ;[cols[i], cols[swap]] = [cols[swap], cols[i]]
     onUpdate({ ...row, columns: cols } as any)
   }
 
@@ -402,10 +434,10 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
       type === "empty"
         ? makeEmpty()
         : type === "header"
-        ? makeHeader()
-        : type === "simple"
-        ? makeSimple()
-        : makeTest()
+          ? makeHeader()
+          : type === "simple"
+            ? makeSimple()
+            : makeTest()
     setRows([...rows, newRow])
   }
 
@@ -423,7 +455,7 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
     const next = [...rows]
     const swap = dir === "up" ? i - 1 : i + 1
     if (swap < 0 || swap >= next.length) return
-    ;[next[i], next[swap]] = [next[swap], next[i]]
+      ;[next[i], next[swap]] = [next[swap], next[i]]
     setRows(next)
   }
 
@@ -504,20 +536,20 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
                 onCopyColumnsFromAbove={
                   row.type === "simple" && i > 0
                     ? () => {
-                        // Find the first preceding TestRow
-                        for (let j = i - 1; j >= 0; j--) {
-                          if (rows[j].type === "test" || rows[j].type === "simple") {
-                            const prevRow = rows[j] as TestRow | SimpleRow
-                            // Deep copy columns but generate new IDs
-                            const newCols = prevRow.columns.map((c: FormatColumn) => ({
-                              ...c,
-                              id: crypto.randomUUID(),
-                            }))
-                            updateRow(i, { ...row, columns: newCols })
-                            break
-                          }
+                      // Find the first preceding TestRow
+                      for (let j = i - 1; j >= 0; j--) {
+                        if (rows[j].type === "test" || rows[j].type === "simple") {
+                          const prevRow = rows[j] as TestRow | SimpleRow
+                          // Deep copy columns but generate new IDs
+                          const newCols = prevRow.columns.map((c: FormatColumn) => ({
+                            ...c,
+                            id: crypto.randomUUID(),
+                          }))
+                          updateRow(i, { ...row, columns: newCols })
+                          break
                         }
                       }
+                    }
                     : undefined
                 }
               />

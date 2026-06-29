@@ -81,11 +81,10 @@ export default function Step3DataEntry({
                 className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-white/[0.02]"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                    isEntered
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isEntered
                       ? "bg-emerald-500/20 text-emerald-400"
                       : "bg-white/10 text-white/50"
-                  }`}>
+                    }`}>
                     {isEntered ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
                   </div>
                   <div>
@@ -106,6 +105,7 @@ export default function Step3DataEntry({
                   <EntryFormFactory
                     entry={testEntry}
                     onChange={(updated) => handleEntryChange(idx, updated)}
+                    patient={patient}
                   />
                 </div>
               )}

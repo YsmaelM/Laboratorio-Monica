@@ -48,7 +48,7 @@ export default function HematologyForm({ entry, onChange }: HematologyFormProps)
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-white/60">
-                  <th className="px-4 py-2.5 text-left font-medium">Parámetr</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Parámetro</th>
                   <th className="px-4 py-2.5 text-left font-medium w-32">Resultado</th>
                   <th className="px-4 py-2.5 text-left font-medium w-24">Unidad</th>
                   <th className="px-4 py-2.5 text-left font-medium w-36">Rango Ref.</th>

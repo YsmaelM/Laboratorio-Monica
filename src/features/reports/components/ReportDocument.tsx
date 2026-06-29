@@ -43,9 +43,9 @@ export function ReportDocument({ order, labInfo }: ReportDocumentProps) {
         referringDoctor={order.referringDoctor}
       >
         <GroupedSimplePdfSection entries={simpleTests} />
-        
+
         {otherTests.map((testEntry) => (
-          <PdfSectionFactory key={testEntry.catalogId} entry={testEntry} />
+          <PdfSectionFactory key={testEntry.catalogId} entry={testEntry} patient={order.patientSnapshot} />
         ))}
       </PageWrapper>
     </Document>
