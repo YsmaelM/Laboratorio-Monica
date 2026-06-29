@@ -144,12 +144,48 @@ export function useGenerateReport() {
       // 3. Generate PDF Blob
       const blob = await pdf(<ReportDocument order={order} labInfo={labInfo} />).toBlob()
       const localUrl = URL.createObjectURL(blob)
-
       try {
         // 4. Upload to Firebase Storage
         const fileName = `reports/${order.patientId}/${orderId}_${Date.now()}.pdf`
         const storageRef = ref(storage, fileName)
-        await uploadBytes(storageRef, blob, { contentType: "application/pdf" })
+
+        // 1. Convertir y formatear la fecha de la orden de forma segura (DD_MM_AAAA)
+        let dateStr = "FECHA"
+        try {
+          const raw = order.orderDate
+          let d: Date
+          if (raw instanceof Timestamp) {
+            d = raw.toDate()
+          } else if (typeof raw === "object" && raw !== null && "seconds" in raw) {
+            d = new Date((raw as any).seconds * 1000)
+          } else {
+            d = new Date(raw as any)
+          }
+
+          const day = String(d.getDate()).padStart(2, '0')
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const year = d.getFullYear()
+          dateStr = `${day}_${month}_${year}`
+        } catch (dateErr) {
+          console.error("Error formatting date for filename:", dateErr)
+        }
+
+        // 2. Sanitizar el nombre del paciente
+        const patientNameClean = `${order.patientSnapshot.firstName}_${order.patientSnapshot.lastName}`
+          .replace(/\s+/g, '_')
+          .toUpperCase();
+
+        // 3. Unir todo en el formato final solicitado
+        const downloadName = `RESULTADO_${patientNameClean}_${dateStr}.pdf`;
+
+        // 4. Configurar la metadata con las cabeceras de descarga
+        const metadata = {
+          contentType: "application/pdf",
+          contentDisposition: `inline; filename="${downloadName}"`
+        };
+
+        // 5. Subir a Firebase Storage
+        await uploadBytes(storageRef, blob, metadata)
         const pdfUrl = await getDownloadURL(storageRef)
 
         // 5. Update Order Document
@@ -159,6 +195,8 @@ export function useGenerateReport() {
         })
 
         return pdfUrl
+
+
       } catch (uploadErr: any) {
         console.warn("Firebase Storage upload failed (CORS/Permissions). Falling back to local Blob URL:", uploadErr)
 

@@ -13,7 +13,9 @@ export function ReportFooter({ labInfo, signatureUrl }: ReportFooterProps) {
     <View style={s.footerFixed}>
 
       {/* 2. Un bloque invisible a la izquierda para equilibrar el Flexbox y que la firma quede centrada */}
-      <View style={{ flex: 1 }} />
+      <View style={{ flex: 1, alignItems: "flex-start" }}>
+        <Text style={{ fontSize: 7, color: "#64748b" }}>{labInfo.address}</Text>
+      </View>
 
       {/* 3. Bloque de la firma en el centro exacto */}
       <View style={{ alignItems: "center", flex: 2 }}>
