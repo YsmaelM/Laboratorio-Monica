@@ -41,12 +41,12 @@ export function useGenerateReport() {
         id: "SAMPLE-123",
         patientId: "PAT-001",
         patientSnapshot: {
+          patientId: "84695124",
+          nationalId: "5165132",
           firstName: "María Altagracia",
           lastName: "González Pérez",
-          birthDate: "1990-05-15",
-          gender: "Femenino",
-          phone: "809-555-0199",
-          email: "maria.gonzalez@example.com"
+          dateOfBirth: Timestamp.now(),
+          sex: "F",
         },
         orderDate: Timestamp.now(),
         status: "reported",
@@ -161,7 +161,7 @@ export function useGenerateReport() {
         return pdfUrl
       } catch (uploadErr: any) {
         console.warn("Firebase Storage upload failed (CORS/Permissions). Falling back to local Blob URL:", uploadErr)
-        
+
         // Update Firestore status to reported even if the PDF file upload failed
         try {
           await updateDoc(doc(db, "orders_results", orderId), {
@@ -170,7 +170,7 @@ export function useGenerateReport() {
         } catch (dbErr) {
           console.error("Failed to update order status in Firestore:", dbErr)
         }
-        
+
         return localUrl
       }
     } catch (err: any) {

@@ -11,16 +11,20 @@ export default function LabSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isPreviewing, setIsPreviewing] = useState(false)
-  
+
   const { generatePreviewPdf } = useGenerateReport()
-  
+
   const [labName, setLabName] = useState("")
   const [address, setAddress] = useState("")
   const [phone, setPhone] = useState("")
-  const [licenseNumber, setLicenseNumber] = useState("")
+  const [MPPS, setMPPS] = useState("")
   const [footerText, setFooterText] = useState("")
   const [signatureUrl, setSignatureUrl] = useState("")
   const [logoUrl, setLogoUrl] = useState("")
+  const [CBC, setCBC] = useState("")
+  const [emailAdress, setEmailAdress] = useState("")
+  const [rif, setRif] = useState("")
+  const [bioanalista, setBioanalista] = useState("")
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -32,10 +36,14 @@ export default function LabSettingsPage() {
           setLabName(data.labName || "")
           setAddress(data.address || "")
           setPhone(data.phone || "")
-          setLicenseNumber(data.licenseNumber || "")
+          setMPPS(data.MPPS || "")
           setFooterText(data.footerText || "")
           setSignatureUrl(data.signatureUrl || "/firma.jpg")
           setLogoUrl(data.logoUrl || "")
+          setCBC(data.CBC || "")
+          setEmailAdress(data.emailAdress || "")
+          setRif(data.rif || "")
+          setBioanalista(data.bioanalista || "")
         }
       } catch (err) {
         console.error("Error fetching lab config:", err)
@@ -67,10 +75,14 @@ export default function LabSettingsPage() {
         labName,
         address,
         phone,
-        licenseNumber,
+        MPPS,
+        CBC,
+        emailAdress,
+        rif,
         footerText,
         signatureUrl,
-        logoUrl
+        logoUrl,
+        bioanalista
       })
       if (url) {
         window.open(url, "_blank")
@@ -88,19 +100,23 @@ export default function LabSettingsPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    
+
     try {
       const docRef = doc(db, "config", "lab")
       await setDoc(docRef, {
         labName,
         address,
         phone,
-        licenseNumber,
+        MPPS,
+        CBC,
+        emailAdress,
+        rif,
         footerText,
         signatureUrl,
         logoUrl,
+        bioanalista
       }, { merge: true })
-      
+
       toast.success("Configuración guardada exitosamente")
     } catch (err) {
       console.error("Error saving lab config:", err)
@@ -169,11 +185,38 @@ export default function LabSettingsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Número de Licencia / RNC</label>
+                <label className="mb-1 block text-sm font-medium text-white/80">Numero: MPPS</label>
                 <input
                   type="text"
-                  value={licenseNumber}
-                  onChange={(e) => setLicenseNumber(e.target.value)}
+                  value={MPPS}
+                  onChange={(e) => setMPPS(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">RIF:</label>
+                <input
+                  type="text"
+                  value={rif}
+                  onChange={(e) => setRif(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Direccion de correo:</label>
+                <input
+                  type="text"
+                  value={emailAdress}
+                  onChange={(e) => setEmailAdress(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Nombre Bioanalista:</label>
+                <input
+                  type="text"
+                  value={bioanalista}
+                  onChange={(e) => setBioanalista(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 />
               </div>

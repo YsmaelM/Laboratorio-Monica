@@ -11,17 +11,21 @@ export function ReportHeader({ labInfo }: ReportHeaderProps) {
     <View style={s.headerRow}>
       <View style={{ flex: 1 }}>
         {labInfo.logoUrl ? (
-          <Image src={labInfo.logoUrl} style={{ width: 120, maxHeight: 60, marginBottom: 8 }} />
+          <Image src={labInfo.logoUrl} style={{ width: 160, maxHeight: 100, marginBottom: 8 }} />
         ) : (
           <Text style={s.labName}>{labInfo.labName}</Text>
         )}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={s.labInfo}>{labInfo.address}</Text>
-        <Text style={s.labInfo}>{labInfo.phone}</Text>
-        {labInfo.licenseNumber ? (
-          <Text style={s.labInfo}>M.P.P.S.: {labInfo.licenseNumber}
-            C.B.C.: {labInfo.licenseNumber}
+        <Text style={s.labInfo}> Tlf:{labInfo.phone}</Text>
+        {labInfo.emailAdress ? (
+          <Text style={s.labInfo}>
+            Correo: {labInfo.emailAdress}
+          </Text>
+        ) : null}
+        {labInfo.rif ? (
+          <Text style={s.labInfo}>
+            RIF: {labInfo.rif}
           </Text>
         ) : null}
       </View>

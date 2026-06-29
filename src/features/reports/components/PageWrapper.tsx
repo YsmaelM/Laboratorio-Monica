@@ -29,7 +29,7 @@ export function PageWrapper({ patient, labInfo, orderDate, referringDoctor, chil
 
       {/* ── Fixed Footer (repeats every page) ───────────── */}
       <View fixed style={s.footerFixed}>
-        <ReportFooter footerText={labInfo.footerText} signatureUrl={labInfo.signatureUrl} />
+        <ReportFooter signatureUrl={labInfo.signatureUrl} labInfo={labInfo} />
       </View>
     </Page>
   )

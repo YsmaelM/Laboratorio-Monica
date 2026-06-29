@@ -39,7 +39,7 @@ export const s = StyleSheet.create({
     fontFamily: "Inter",
     fontSize: 9,
     color: COLORS.text,
-    paddingTop: 120,
+    paddingTop: 135,
     paddingBottom: 70,
     paddingHorizontal: 40,
   },
@@ -53,8 +53,7 @@ export const s = StyleSheet.create({
     paddingHorizontal: 40,
     paddingTop: 25,
     paddingBottom: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary,
+    marginBottom: 10,
   },
   headerRow: {
     flexDirection: "row",
@@ -75,7 +74,7 @@ export const s = StyleSheet.create({
   // ── Patient Info ─────────────────────────────
   patientBlock: {
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: 0,
     padding: 10,
     backgroundColor: COLORS.borderLight,
     borderRadius: 4,
@@ -98,12 +97,16 @@ export const s = StyleSheet.create({
   },
 
   // ── Section Headers ──────────────────────────
+  sectionHeader: {
+    marginTop: 0,
+    marginBottom: 0,
+  },
   sectionTitle: {
     fontSize: 11,
     fontWeight: 700,
     color: COLORS.primary,
-    marginTop: 14,
-    marginBottom: 6,
+    marginTop: 20,
+    marginBottom: 4,
     paddingBottom: 3,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.primaryLight,
@@ -112,8 +115,8 @@ export const s = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: 600,
     color: COLORS.dark,
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 4,
+    marginBottom: 2,
   },
 
   // ── Tables ───────────────────────────────────
@@ -193,12 +196,13 @@ export const s = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 40,
-    paddingVertical: 12,
+    paddingVertical: 2,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 5,
   },
   footerText: {
     fontSize: 7,

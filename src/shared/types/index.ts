@@ -7,11 +7,15 @@ export interface LabConfig {
   labName: string
   address: string
   phone: string
-  licenseNumber?: string
+  MPPS?: string
+  CBC?: string
+  emailAdress?: string
   logoUrl?: string
   letterheadUrl?: string
   footerText?: string
   signatureUrl?: string
+  rif?: string
+  bioanalista?: string
 }
 
 // ─────────────────────────────────────────────
@@ -48,9 +52,9 @@ export interface PatientSnapshot {
 export type TestFormat = "simple" | "custom" | "hematology" | "urinalysis" | "stool" | "culture"
 
 export interface RefRange {
-  male:    { min: number; max: number }
-  female:  { min: number; max: number }
-  child?:  { min: number; max: number }
+  male: { min: number; max: number }
+  female: { min: number; max: number }
+  child?: { min: number; max: number }
 }
 
 export interface ReferenceValue {
@@ -66,26 +70,26 @@ export interface ReferenceValue {
 }
 
 export interface SimpleTestDefaults {
-  unit:      string
-  method:    string
+  unit: string
+  method: string
   refRanges?: RefRange
-  refValue?:  ReferenceValue
+  refValue?: ReferenceValue
 }
 
 export interface ProfileField {
-  key:           string
-  label:         string
-  inputType:     "number" | "text" | "select" | "textarea"
-  options?:      string[]
-  unit?:         string
-  refRanges?:    RefRange
-  refValue?:     ReferenceValue
+  key: string
+  label: string
+  inputType: "number" | "text" | "select" | "textarea"
+  options?: string[]
+  unit?: string
+  refRanges?: RefRange
+  refValue?: ReferenceValue
   defaultValue?: string | number
 }
 
 export interface ProfileSection {
   sectionName: string
-  fields:      ProfileField[]
+  fields: ProfileField[]
 }
 
 export interface ProfileTemplate {
@@ -96,36 +100,36 @@ export interface ProfileTemplate {
 // Custom Format Builder
 // ─────────────────────────────────────────────
 export interface FormatColumn {
-  id:        string
-  label:     string                            // "Color", "Moco", etc.
-  type:      "text" | "number" | "select" | "reference" | "unit"
-  options?:  string[]                          // Solo para type "select"
-  width?:    number                            // Ancho relativo (1–12)
+  id: string
+  label: string                            // "Color", "Moco", etc.
+  type: "text" | "number" | "select" | "reference" | "unit"
+  options?: string[]                          // Solo para type "select"
+  width?: number                            // Ancho relativo (1–12)
   defaultValue?: string                        // Valor por defecto / fijo
-  isFixed?:  boolean                           // Si es un valor fijo (no editable)
+  isFixed?: boolean                           // Si es un valor fijo (no editable)
   isHeaderOnly?: boolean                       // Si es solo cabecera/membrete (sin valor)
 }
 
 export interface EmptyRow {
-  id:   string
+  id: string
   type: "empty"
 }
 
 export interface HeaderRow {
-  id:   string
+  id: string
   type: "header"
   text: string                                 // "Análisis Macroscópico:"
 }
 
 export interface TestRow {
-  id:      string
-  type:    "test"
+  id: string
+  type: "test"
   columns: FormatColumn[]
 }
 
 export interface SimpleRow {
-  id:      string
-  type:    "simple"
+  id: string
+  type: "simple"
   columns: FormatColumn[]
 }
 
@@ -136,17 +140,17 @@ export interface CustomFormatTemplate {
 }
 
 export interface TestCatalogItem {
-  id:              string
-  name:            string
-  code:            string
-  format:          TestFormat
-  category:        string
-  isQuickAction:   boolean
-  simpleDefaults?:  SimpleTestDefaults
+  id: string
+  name: string
+  code: string
+  format: TestFormat
+  category: string
+  isQuickAction: boolean
+  simpleDefaults?: SimpleTestDefaults
   profileTemplate?: ProfileTemplate
-  customTemplate?:  CustomFormatTemplate       // Solo cuando format === "custom"
-  active:          boolean
-  order:           number
+  customTemplate?: CustomFormatTemplate       // Solo cuando format === "custom"
+  active: boolean
+  order: number
 }
 
 // ─────────────────────────────────────────────
@@ -158,40 +162,40 @@ export type OrderStatus = "draft" | "in_progress" | "completed" | "reported"
 
 interface TestEntryBase {
   catalogId: string
-  testName:  string
-  format:    TestFormat
-  status:    EntryStatus
+  testName: string
+  format: TestFormat
+  status: EntryStatus
 }
 
 export interface SimpleTestEntry extends TestEntryBase {
   format: "simple"
   data: {
-    result:   string | number
-    unit:     string
+    result: string | number
+    unit: string
     refRange: string
-    method:   string
-    flag?:    ResultFlag
+    method: string
+    flag?: ResultFlag
   }
 }
 
 export interface HematologyResultRow {
-  key:       string
-  label:     string
-  value:     string | number
-  unit:      string
-  refRange:  string
-  flag?:     ResultFlag
+  key: string
+  label: string
+  value: string | number
+  unit: string
+  refRange: string
+  flag?: ResultFlag
 }
 
 export interface HematologySection {
   sectionName: string
-  results:     HematologyResultRow[]
+  results: HematologyResultRow[]
 }
 
 export interface HematologyEntry extends TestEntryBase {
   format: "hematology"
   data: {
-    sections:    HematologySection[]
+    sections: HematologySection[]
     smearNotes?: string
   }
 }
@@ -199,8 +203,8 @@ export interface HematologyEntry extends TestEntryBase {
 export interface UrinalysisEntry extends TestEntryBase {
   format: "urinalysis"
   data: {
-    physical:    Record<string, string>
-    chemical:    Record<string, string>
+    physical: Record<string, string>
+    chemical: Record<string, string>
     microscopic: Record<string, string>
   }
 }
@@ -210,26 +214,26 @@ export interface StoolEntry extends TestEntryBase {
   data: {
     macroscopic: Record<string, string>
     microscopic: Record<string, string>
-    chemical:    Record<string, string>
+    chemical: Record<string, string>
   }
 }
 
 export interface AntibiogramRow {
   antibiotic: string
-  result:     "S" | "I" | "R"
-  mic?:       string
+  result: "S" | "I" | "R"
+  mic?: string
 }
 
 export interface CultureEntry extends TestEntryBase {
   format: "culture"
   data: {
-    sampleType:     string
-    gramStain?:     string
-    cultureResult:  string
-    organism?:      string
-    colonyCount?:   string
-    antibiogram?:   AntibiogramRow[]
-    notes?:         string
+    sampleType: string
+    gramStain?: string
+    cultureResult: string
+    organism?: string
+    colonyCount?: string
+    antibiogram?: AntibiogramRow[]
+    notes?: string
   }
 }
 
@@ -251,15 +255,15 @@ export type TestEntry =
   | CustomTestEntry
 
 export interface OrderResult {
-  id:              string
-  patientId:       string
+  id: string
+  patientId: string
   patientSnapshot: PatientSnapshot
-  orderDate:       Timestamp
-  status:          OrderStatus
+  orderDate: Timestamp
+  status: OrderStatus
   referringDoctor?: string
-  tests:           TestEntry[]
-  pdfUrl?:         string
-  createdBy:       string
-  createdAt:       Timestamp
-  updatedAt:       Timestamp
+  tests: TestEntry[]
+  pdfUrl?: string
+  createdBy: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }

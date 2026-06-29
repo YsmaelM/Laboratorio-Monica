@@ -10,26 +10,26 @@ export function GroupedSimplePdfSection({ entries }: GroupedSimplePdfSectionProp
   if (entries.length === 0) return null
 
   return (
-    <View style={{ marginTop: 10, breakInside: "avoid" }}>
+    <View wrap={false} style={{ marginTop: 10 }}>
       <View style={s.sectionHeader}>
-        <Text style={s.sectionTitle}>Pruebas Simples / Química</Text>
+        <Text style={s.sectionTitle}>Pruebas de laboratorio:</Text>
       </View>
-      
+
       <View style={s.tableHeader}>
         <Text style={[s.tableHeaderText, { flex: 2 }]}>Prueba</Text>
         <Text style={[s.tableHeaderText, { flex: 1 }]}>Resultado</Text>
         <Text style={[s.tableHeaderText, { flex: 1 }]}>Unidad</Text>
-        <Text style={[s.tableHeaderText, { flex: 1 }]}>Rango de Referencia</Text>
+        <Text style={[s.tableHeaderText, { flex: 1 }]}>Val. Ref.</Text>
         <Text style={[s.tableHeaderText, { flex: 1.5 }]}>Método</Text>
       </View>
-      
+
       {entries.map((entry, idx) => {
         const { data } = entry
-        
+
         // Calculate flag if possible, assuming refRange format "min - max"
         let isHigh = false
         let isLow = false
-        
+
         if (data.refRange && typeof data.result === 'string' && !isNaN(Number(data.result))) {
           const val = Number(data.result)
           const parts = data.refRange.split('-').map(p => Number(p.trim()))
