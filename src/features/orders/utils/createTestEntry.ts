@@ -16,7 +16,7 @@ export function createTestEntry(catalogItem: TestCatalogItem): TestEntry {
           result: "",
           unit: catalogItem.simpleDefaults?.unit || "",
           method: catalogItem.simpleDefaults?.method || "",
-          refRange: "", // Calculated at entry time based on patient sex/age, but could be empty initially
+          refValue: catalogItem.simpleDefaults?.refValue || "", // Calculated at entry time based on patient sex/age, but could be empty initially
         },
       }
 

@@ -172,7 +172,7 @@ export interface SimpleTestEntry extends TestEntryBase {
   data: {
     result: string | number
     unit: string
-    refRange: string
+    refValue: ReferenceValue | string
     method: string
     flag?: ResultFlag
   }
