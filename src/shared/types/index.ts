@@ -102,12 +102,13 @@ export interface ProfileTemplate {
 export interface FormatColumn {
   id: string
   label: string                            // "Color", "Moco", etc.
-  type: "text" | "number" | "select" | "reference" | "unit"
+  type: "text" | "number" | "select" | "reference" | "unit" | "formula"
   options?: string[]                          // Solo para type "select"
   width?: number                            // Ancho relativo (1–12)
   defaultValue?: string                        // Valor por defecto / fijo
   isFixed?: boolean                           // Si es un valor fijo (no editable)
   isHeaderOnly?: boolean                       // Si es solo cabecera/membrete (sin valor)
+  formulaExpression?: string
   refType?: "single_point" | "two_point" | "group" // Tipo interno del rango
   min?: number
   max?: number

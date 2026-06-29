@@ -20,9 +20,64 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
 
   let simpleRowCount = 0
 
+  // ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS PARA EL PDF ──
+  const evaluateFormula = (
+    formulaExpression: string | undefined,
+    rowId: string,
+    data: Record<string, string | number>
+  ): string => {
+    if (!formulaExpression) return "—"
+
+    try {
+      let expression = formulaExpression
+      const tokenRegex = /\{([^}]+)\}/g
+      let match
+      let missingField = false
+
+      const replacements: Array<{ token: string; value: string }> = []
+
+      while ((match = tokenRegex.exec(formulaExpression)) !== null) {
+        const targetColId = match[1]
+        const fieldKey = `${rowId}_${targetColId}`
+        const rawValue = data[fieldKey]
+        const numValue = Number(rawValue)
+
+        if (rawValue === undefined || rawValue === "" || isNaN(numValue)) {
+          missingField = true
+          break
+        }
+
+        expression = expression.replace(`{${targetColId}}`, numValue.toString())
+      }
+
+      if (missingField) return "—"
+
+      replacements.forEach(({ token, value }) => {
+        // Use split/join to replace all instances globally and safely
+        expression = expression.split(token).join(value)
+      })
+      if (expression.includes("{") || expression.includes("}")) {
+        return "—"
+      }
+
+      // Sanitización estricta por seguridad matemática
+      const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "")
+      if (!sanitizedExpression.trim()) return "—"
+      const result = new Function(`return (${sanitizedExpression})`)()
+
+      if (result === null || result === undefined || isNaN(result) || !isFinite(result)) {
+        return "0"
+      }
+
+      return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2)
+    } catch (error) {
+      console.error("Formula parsing error:", error)
+      return "Error"
+    }
+  }
+
   // ── FUNCIÓN DE EXTRACCIÓN MEJORADA CONTRA STRINGS ESTÁTICOS ──
   const getRefColumnValue = (col: any, refColumn: any) => {
-    // 1. Si la columna contiene directamente el arreglo de grupos, hacemos la búsqueda inteligente
     if (col && Array.isArray(col.groups) && col.groups.length > 0) {
       if (patient) {
         const pAge = patient.age ?? 0;
@@ -46,7 +101,6 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       return col.groups.map((g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min}-${g.max}` : g.max}`).join(" | ");
     }
 
-    // 2. DETECTOR CRÍTICO: Si el texto por defecto dice "ver desglose" pero la fila tiene min/max matemáticos cargados por la alerta
     const dValue = col.defaultValue ?? "";
     if (dValue.toLowerCase().includes("desglose") || dValue.toLowerCase().includes("grupo")) {
       if (refColumn && refColumn.min !== undefined && refColumn.max !== undefined) {
@@ -69,8 +123,6 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       return { isHigh, isLow }
     }
 
-    // ── FILTRO CRÍTICO DE EXCLUSIÓN ──
-    // Si el nombre de la columna actual coincide con datos crudos de tiempo, cancelamos la alerta
     const labelLower = (currentColumn.label || "").toLowerCase()
     if (
       labelLower.includes("paciente") ||
@@ -79,7 +131,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       labelLower.includes("muestra") ||
       labelLower.includes("tiempo")
     ) {
-      return { isHigh, isLow } // Retorna falso para ambas alertas de forma inmediata
+      return { isHigh, isLow }
     }
 
     let targetMin = refColumn.min
@@ -159,12 +211,16 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                   const dynamicRef = getRefColumnValue(col, refColumn)
                   let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")
 
-                  // Limpieza si el string guardado en el form es la frase estática
+                  //  CÁLCULO DE FÓRMULA EN FILA TEST
+                  if (col.type === "formula") {
+                    value = evaluateFormula(col.formulaExpression, row.id, data)
+                  }
+
                   if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
                     value = dynamicRef;
                   }
 
-                  const isResultColumn = col.type === "number" || (!col.isHeaderOnly && !col.isFixed && col.type === "text")
+                  const isResultColumn = col.type === "number" || col.type === "formula" || (!col.isHeaderOnly && !col.isFixed && col.type === "text")
 
                   const { isHigh, isLow } = isResultColumn
                     ? checkCustomAlerts(value, refColumn, col)
@@ -218,12 +274,16 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                 const dynamicRef = getRefColumnValue(col, refColumn)
                 let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")
 
+                if (col.type === "formula") {
+                  value = evaluateFormula(col.formulaExpression, row.id, data)
+                }
+
                 // Limpieza si el string guardado en el form es la frase estática
                 if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
                   value = dynamicRef;
                 }
 
-                const isResultColumn = col.type === "number" || (!col.isHeaderOnly && !col.isFixed && col.type === "text")
+                const isResultColumn = col.type === "number" || col.type === "formula" || (!col.isHeaderOnly && !col.isFixed && col.type === "text")
 
                 const { isHigh, isLow } = isResultColumn
                   ? checkCustomAlerts(value, refColumn, col)

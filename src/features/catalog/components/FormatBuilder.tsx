@@ -4,7 +4,7 @@ const uid = () => crypto.randomUUID()
 import {
   Plus, Trash2, ChevronUp, ChevronDown,
   AlignLeft, Hash, List, BookOpen, Minus,
-  GripVertical, Settings2, Eye, EyeOff,
+  GripVertical, Settings2, Eye, EyeOff, Calculator,
 } from "lucide-react"
 import type {
   CustomFormatTemplate, FormatRow, FormatColumn,
@@ -27,6 +27,7 @@ const COL_TYPE_OPTIONS = [
   { value: "select", label: "Desplegable", icon: List },
   { value: "reference", label: "Referencia", icon: BookOpen },
   { value: "unit", label: "Unidad", icon: Minus },
+  { value: "formula", label: "Fórmula (Auto)", icon: Calculator },
 ] as const
 
 type ColType = typeof COL_TYPE_OPTIONS[number]["value"]
@@ -37,6 +38,7 @@ const COL_TYPE_COLORS: Record<ColType, string> = {
   select: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   reference: "bg-primary-500/10 text-primary-400 border-primary-500/20",
   unit: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  formula: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
 }
 
 // ─── Row creators ─────────────────────────────────────────────────────────────
@@ -233,6 +235,38 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
           </>
         )}
       </div>
+      {!col.isHeaderOnly && (
+        <>
+          <div className="mb-2 flex items-center justify-between rounded-lg bg-white/[0.02] border border-white/5 px-2 py-1">
+            <span className="text-[9px] uppercase tracking-wider text-white/40 font-medium">
+              ID de Columna:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <code className="text-[10px] font-mono text-primary-400 bg-primary-500/10 px-1.5 py-0.5 rounded select-all">
+                {col.id}
+              </code>
+            </div>
+          </div>
+          {/* ── NUEVA SECCIÓN: INPUT PARA LA EXPRESIÓN DE LA FÓRMULA ── */}
+          {col.type === "formula" && (
+            <div className="mt-2 pt-2 border-t border-white/5 space-y-1.5">
+              <label className="text-[10px] text-cyan-400 block font-medium">
+                Expresión Matemática de la Fórmula:
+              </label>
+              <input
+                type="text"
+                value={col.formulaExpression ?? ""}
+                onChange={(e) => onUpdate({ ...col, formulaExpression: e.target.value })}
+                placeholder="Ej: ({col_paciente} / {col_control})"
+                className="w-full rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-2.5 py-1.5 text-xs text-cyan-200 placeholder-cyan-500/30 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              />
+              <p className="text-[9px] text-white/40 leading-tight">
+                Usa los IDs de las columnas entre llaves. Ej: <code className="text-white/60">{`{id_col}`}</code>. Operadores válidos: <code className="text-white/60">+ - * / ( )</code>
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Dropdown options (only for select type) */}
       {col.type === "select" && (

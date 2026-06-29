@@ -11,7 +11,6 @@ const inputBase =
 
 // ── FUNCIÓN DE EXTRACCIÓN DINÁMICA DE RANGOS PARA LA PANTALLA ──
 const getFormRefText = (col: any, patient: any) => {
-  // Si la columna tiene cargado un arreglo de grupos, buscamos el del paciente actual
   if (col && Array.isArray(col.groups) && col.groups.length > 0) {
     if (patient) {
       const pAge = patient.age ?? 0
@@ -32,12 +31,66 @@ const getFormRefText = (col: any, patient: any) => {
           : `Hasta ${matchedGroup.max ?? 0}`
       }
     }
-    // Fallback si no hay paciente cargado en pantalla: listamos todos los grupos cortos
     return col.groups.map((g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min}-${g.max}` : g.max}`).join(" | ")
   }
-
-  // Si no es por grupos, simplemente retorna el valor plano (ej: "12 - 16")
   return col.defaultValue ?? ""
+}
+
+// ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS EN TIEMPO REAL ──
+const evaluateFormula = (
+  formulaExpression: string | undefined,
+  rowId: string,
+  data: Record<string, string | number>
+): string => {
+  if (!formulaExpression) return "—"
+
+  try {
+    let expression = formulaExpression
+    const tokenRegex = /\{([^}]+)\}/g
+    let match
+    let missingField = false
+
+    const replacements: Array<{ token: string; value: string }> = []
+
+
+    while ((match = tokenRegex.exec(formulaExpression)) !== null) {
+      const targetColId = match[1]
+      const fieldKey = `${rowId}_${targetColId}`
+      const rawValue = data[fieldKey]
+      const numValue = Number(rawValue)
+
+      if (rawValue === undefined || rawValue === "" || isNaN(numValue)) {
+        missingField = true
+        break
+      }
+
+      expression = expression.replace(`{${targetColId}}`, numValue.toString())
+    }
+
+    if (missingField) return "—"
+
+    replacements.forEach(({ token, value }) => {
+      // Use split/join to replace all instances globally and safely
+      expression = expression.split(token).join(value)
+    })
+    if (expression.includes("{") || expression.includes("}")) {
+      return "—"
+    }
+
+    // Sanitización estricta por seguridad matemática contra inyecciones XSS
+    const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "")
+    if (!sanitizedExpression.trim()) return "—"
+    const result = new Function(`return (${sanitizedExpression})`)()
+
+    if (result === null || result === undefined || isNaN(result) || !isFinite(result)) {
+      return "0"
+    }
+
+    return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2)
+  } catch (error) {
+    console.error("Formula parsing error:", error)
+    return "Error"
+  }
 }
 
 function CellInput({
@@ -56,6 +109,15 @@ function CellInput({
   patient?: any
 }) {
   const fieldKey = `${rowId}_${col.id}`
+
+  // ── 1. AGREGAMOS EL COMPORTAMIENTO RENDER DE LA FÓRMULA AUTOMÁTICA ──
+  if (col.type === "formula") {
+    return (
+      <div className="flex h-9 items-center px-3 rounded-xl border border-primary-500/20 bg-primary-500/5 text-sm font-bold text-primary-400">
+        {value || "—"}
+      </div>
+    )
+  }
 
   if (col.type === "select") {
     return (
@@ -107,7 +169,6 @@ function CellInput({
     )
   }
 
-  //  CORRECCIÓN EN EL INPUT DE TEXTO: Si es columna de referencia, calculamos el valor dinámico real siempre
   const displayValue = col.type === "reference" || Array.isArray(col.groups)
     ? getFormRefText(col, patient)
     : value
@@ -165,14 +226,17 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
               style={{ gridTemplateColumns: row.columns.map((c) => `${c.width ?? 1}fr`).join(" ") }}
             >
               {row.columns.map((col) => {
-                const fieldKey = `${row.id}_${col.id}`
+                const fieldKey = `${row.id}_${col.id}`;
 
-                //  CORRECCIÓN EN EL PROCESADO DE CELDA PADRE: Forzamos la consulta dinámica si es de referencia
                 const cellDefault = col.type === "reference" || Array.isArray(col.groups)
                   ? getFormRefText(col, patient)
                   : (col.defaultValue ?? "")
 
-                const value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? cellDefault)
+                // ── 2. INTERCEPTAMOS EL VALOR DEL PADRE SI ES UNA FÓRMULA ──
+                let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? cellDefault)
+                if (col.type === "formula") {
+                  value = evaluateFormula(col.formulaExpression, row.id, data)
+                }
 
                 return (
                   <div key={col.id}>
@@ -213,12 +277,17 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
               {row.columns.map((col) => {
                 const fieldKey = `${row.id}_${col.id}`
 
-                //  CORRECCIÓN EN EL PROCESADO DE CELDA PADRE (Fila Simple)
                 const cellDefault = col.type === "reference" || Array.isArray(col.groups)
                   ? getFormRefText(col, patient)
                   : (col.defaultValue ?? "")
 
-                const value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? cellDefault)
+                // ── 3. INTERCEPTAMOS EL VALOR DEL PADRE EN FILAS SIMPLES ──
+                let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? cellDefault)
+                if (col.type === "formula") {
+                  value = evaluateFormula(col.formulaExpression, row.id, data)
+                }
+
+
 
                 return (
                   <div key={col.id}>
