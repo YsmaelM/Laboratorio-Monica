@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore"
-import { db } from "@/shared/lib/firebase"
+import { ref, deleteObject } from "firebase/storage"
+import { db, storage } from "@/shared/lib/firebase"
 import type { OrderResult } from "@/shared/types"
 import { Loader2, FileText, Search, Trash2, X } from "lucide-react"
 import toast from "react-hot-toast"
@@ -10,7 +11,7 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<OrderResult[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  
+
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -38,9 +39,32 @@ export default function OrderHistoryPage() {
     if (!orderToDelete) return
     setIsDeleting(true)
     try {
+      // Localizamos la orden en nuestro estado local antes de borrarla
+      const targetOrder = orders.find(o => o.id === orderToDelete)
+
+      // Si la orden existe y tiene un PDF guardado en Firebase Storage, lo borramos primero
+      if (targetOrder && targetOrder.pdfUrl) {
+        try {
+          // Extraemos la ruta interna exacta a partir del link público de descarga
+          const decodedUrl = decodeURIComponent(targetOrder.pdfUrl);
+          const pathStart = decodedUrl.indexOf("/o/") + 3;
+          const pathEnd = decodedUrl.indexOf("?alt=media");
+          const storagePath = decodedUrl.substring(pathStart, pathEnd);
+
+          const fileRef = ref(storage, storagePath)
+          await deleteObject(fileRef)
+          console.log("PDF físico eliminado de Storage con éxito.");
+        } catch (storageErr) {
+          // Si el archivo no existe en Storage (o da error de CORS), registramos la advertencia pero permitimos borrar la orden
+          console.warn("No se pudo eliminar el archivo físico de Storage:", storageErr)
+        }
+      }
+
+      // Finalmente borramos el registro de la base de datos de Firestore
       await deleteDoc(doc(db, "orders_results", orderToDelete))
+
       setOrders(prev => prev.filter(o => o.id !== orderToDelete))
-      toast.success("Orden eliminada correctamente")
+      toast.success("Orden e informe eliminados correctamente")
     } catch (err) {
       console.error("Error deleting order:", err)
       toast.error("Error al eliminar la orden")
@@ -50,7 +74,7 @@ export default function OrderHistoryPage() {
     }
   }
 
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter(order =>
     order.patientSnapshot.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.patientSnapshot.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.patientSnapshot.nationalId.includes(searchTerm)
@@ -119,11 +143,10 @@ export default function OrderHistoryPage() {
                       {order.tests.length} prueba(s)
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        order.status === "reported" 
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-                          : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                      }`}>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${order.status === "reported"
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                        }`}>
                         {order.status === "reported" ? "Reportado" : "Pendiente"}
                       </span>
                     </td>
@@ -147,7 +170,7 @@ export default function OrderHistoryPage() {
                           className="inline-flex items-center justify-center rounded-lg bg-white/5 p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white"
                           title="Editar orden"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                         </a>
                         <button
                           onClick={() => setOrderToDelete(order.id)}
