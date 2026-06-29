@@ -60,12 +60,27 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
     return dValue;
   };
 
-  const checkCustomAlerts = (value: string, refColumn: any) => {
+  const checkCustomAlerts = (value: string, refColumn: any, currentColumn: any) => {
     let isHigh = false
     let isLow = false
     const numValue = Number(value)
 
-    if (!refColumn || value === "" || isNaN(numValue)) return { isHigh, isLow }
+    if (!refColumn || value === "" || isNaN(numValue) || !currentColumn) {
+      return { isHigh, isLow }
+    }
+
+    // ── FILTRO CRÍTICO DE EXCLUSIÓN ──
+    // Si el nombre de la columna actual coincide con datos crudos de tiempo, cancelamos la alerta
+    const labelLower = (currentColumn.label || "").toLowerCase()
+    if (
+      labelLower.includes("paciente") ||
+      labelLower.includes("control") ||
+      labelLower.includes("segundo") ||
+      labelLower.includes("muestra") ||
+      labelLower.includes("tiempo")
+    ) {
+      return { isHigh, isLow } // Retorna falso para ambas alertas de forma inmediata
+    }
 
     let targetMin = refColumn.min
     let targetMax = refColumn.max
@@ -152,7 +167,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                   const isResultColumn = col.type === "number" || (!col.isHeaderOnly && !col.isFixed && col.type === "text")
 
                   const { isHigh, isLow } = isResultColumn
-                    ? checkCustomAlerts(value, refColumn)
+                    ? checkCustomAlerts(value, refColumn, col)
                     : { isHigh: false, isLow: false }
 
                   return (
@@ -211,7 +226,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                 const isResultColumn = col.type === "number" || (!col.isHeaderOnly && !col.isFixed && col.type === "text")
 
                 const { isHigh, isLow } = isResultColumn
-                  ? checkCustomAlerts(value, refColumn)
+                  ? checkCustomAlerts(value, refColumn, col)
                   : { isHigh: false, isLow: false }
 
                 return (

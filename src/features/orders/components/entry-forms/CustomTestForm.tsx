@@ -77,7 +77,15 @@ function CellInput({
   if (col.type === "number") {
     let borderStyles = "border-white/10 bg-white/5 focus:border-primary-500 focus:ring-primary-500"
 
-    if (value !== "" && !isNaN(Number(value)) && refColumn) {
+    const labelLower = (col.label || "").toLowerCase()
+    const isExcluded =
+      labelLower.includes("paciente") ||
+      labelLower.includes("control") ||
+      labelLower.includes("segundo") ||
+      labelLower.includes("muestra") ||
+      labelLower.includes("tiempo pt")
+
+    if (!isExcluded && value !== "" && !isNaN(Number(value)) && refColumn) {
       const numValue = Number(value)
       if (refColumn.min !== undefined && numValue < refColumn.min) {
         borderStyles = "border-amber-500/50 bg-amber-500/5 focus:border-amber-500 focus:ring-amber-500 text-amber-300"
