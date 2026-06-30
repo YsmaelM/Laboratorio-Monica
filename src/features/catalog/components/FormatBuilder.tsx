@@ -261,7 +261,7 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
                 className="w-full rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-2.5 py-1.5 text-xs text-cyan-200 placeholder-cyan-500/30 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
               />
               <p className="text-[9px] text-white/40 leading-tight">
-                Usa los IDs de las columnas entre llaves. Ej: <code className="text-white/60">{`{id_col}`}</code>. Operadores válidos: <code className="text-white/60">+ - * / ( )</code>
+                Usa los IDs de las columnas entre llaves. Ej: <code className="text-white/60">{`{id_col}`}</code>. Operadores válidos: <code className="text-white/60">+ - * / ( )</code> para exponentes usar **
               </p>
             </div>
           )}

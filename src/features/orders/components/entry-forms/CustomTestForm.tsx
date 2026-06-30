@@ -39,8 +39,9 @@ const getFormRefText = (col: any, patient: any) => {
 // ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS EN TIEMPO REAL ──
 const evaluateFormula = (
   formulaExpression: string | undefined,
-  rowId: string,
-  data: Record<string, string | number>
+  currentRowId: string,
+  data: Record<string, string | number>,
+  customTemplate?: any
 ): string => {
   if (!formulaExpression) return "—"
 
@@ -49,37 +50,64 @@ const evaluateFormula = (
     const tokenRegex = /\{([^}]+)\}/g
     let match
     let missingField = false
-
     const replacements: Array<{ token: string; value: string }> = []
 
-
     while ((match = tokenRegex.exec(formulaExpression)) !== null) {
-      const targetColId = match[1]
-      const fieldKey = `${rowId}_${targetColId}`
-      const rawValue = data[fieldKey]
+      const targetColId = match[1] // Corregido: Extrae el ID limpio sin las llaves {}
+
+      // 1. Intentar buscar primero en la fila actual
+      let fieldKey = `${currentRowId}_${targetColId}`
+      let rawValue = data[fieldKey]
+
+      // 2. RADAR MULTI-FILA MEJORADO
+      // Si no está en la fila actual, escaneamos de forma exhaustiva el resto de las filas
+      if ((rawValue === undefined || rawValue === "") && customTemplate?.rows) {
+        for (const row of customTemplate.rows) {
+          if (row.columns && Array.isArray(row.columns)) {
+            const foundCol = row.columns.find((c: any) => c.id === targetColId)
+
+            if (foundCol) {
+              // DETECTOR CRÍTICO: Si la columna que encontramos arriba es OTRA fórmula, 
+              // la calculamos en cascada de forma recursiva inmediatamente
+              if (foundCol.type === "formula") {
+                rawValue = evaluateFormula(foundCol.formulaExpression, row.id, data, customTemplate)
+              } else {
+                fieldKey = `${row.id}_${targetColId}`
+                rawValue = data[fieldKey]
+              }
+              break
+            }
+          }
+        }
+      }
+
+      // Convertimos a número de manera limpia
       const numValue = Number(rawValue)
 
+      // Si el campo sigue vacío o no es un número válido, marcamos como faltante
       if (rawValue === undefined || rawValue === "" || isNaN(numValue)) {
         missingField = true
         break
       }
 
-      expression = expression.replace(`{${targetColId}}`, numValue.toString())
+      replacements.push({ token: match[0], value: numValue.toString() })
     }
 
     if (missingField) return "—"
 
+    // Aplicar los reemplazos de números en la ecuación
     replacements.forEach(({ token, value }) => {
-      // Use split/join to replace all instances globally and safely
       expression = expression.split(token).join(value)
     })
+
     if (expression.includes("{") || expression.includes("}")) {
       return "—"
     }
 
-    // Sanitización estricta por seguridad matemática contra inyecciones XSS
+    // Sanitización y cálculo nativo de potencias y operaciones
     const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "")
     if (!sanitizedExpression.trim()) return "—"
+
     const result = new Function(`return (${sanitizedExpression})`)()
 
     if (result === null || result === undefined || isNaN(result) || !isFinite(result)) {
@@ -88,10 +116,11 @@ const evaluateFormula = (
 
     return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2)
   } catch (error) {
-    console.error("Formula parsing error:", error)
+    console.error("Formula parsing error with multi-row support:", error)
     return "Error"
   }
 }
+
 
 function CellInput({
   col,
@@ -235,7 +264,7 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
                 // ── 2. INTERCEPTAMOS EL VALOR DEL PADRE SI ES UNA FÓRMULA ──
                 let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? cellDefault)
                 if (col.type === "formula") {
-                  value = evaluateFormula(col.formulaExpression, row.id, data)
+                  value = evaluateFormula(col.formulaExpression, row.id, data, customTemplate)
                 }
 
                 return (
@@ -284,7 +313,7 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
                 // ── 3. INTERCEPTAMOS EL VALOR DEL PADRE EN FILAS SIMPLES ──
                 let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? cellDefault)
                 if (col.type === "formula") {
-                  value = evaluateFormula(col.formulaExpression, row.id, data)
+                  value = evaluateFormula(col.formulaExpression, row.id, data, customTemplate)
                 }
 
 

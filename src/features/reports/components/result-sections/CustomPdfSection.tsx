@@ -20,11 +20,12 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
 
   let simpleRowCount = 0
 
-  // ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS PARA EL PDF ──
+  // ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS PARA EL PDF (SOPORTE MULTI-FILA EN CASCADA) ──
   const evaluateFormula = (
     formulaExpression: string | undefined,
-    rowId: string,
-    data: Record<string, string | number>
+    currentRowId: string,
+    data: Record<string, string | number>,
+    customTemplate?: any
   ): string => {
     if (!formulaExpression) return "—"
 
@@ -33,13 +34,35 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       const tokenRegex = /\{([^}]+)\}/g
       let match
       let missingField = false
-
       const replacements: Array<{ token: string; value: string }> = []
 
       while ((match = tokenRegex.exec(formulaExpression)) !== null) {
-        const targetColId = match[1]
-        const fieldKey = `${rowId}_${targetColId}`
-        const rawValue = data[fieldKey]
+        const targetColId = match[1] // Extrae el ID limpio sin las llaves {}
+
+        // 1. Intentar buscar primero en la fila actual
+        let fieldKey = `${currentRowId}_${targetColId}`
+        let rawValue = data[fieldKey]
+
+        // 2. RADAR MULTI-FILA EXHAUSTIVO EN EL PDF
+        if ((rawValue === undefined || rawValue === "") && customTemplate?.rows) {
+          for (const row of customTemplate.rows) {
+            if (row.columns && Array.isArray(row.columns)) {
+              const foundCol = row.columns.find((c: any) => c.id === targetColId)
+
+              if (foundCol) {
+                // Si la columna encontrada arriba es OTRA fórmula, la calculamos en cascada inmediatamente
+                if (foundCol.type === "formula") {
+                  rawValue = evaluateFormula(foundCol.formulaExpression, row.id, data, customTemplate)
+                } else {
+                  fieldKey = `${row.id}_${targetColId}`
+                  rawValue = data[fieldKey]
+                }
+                break
+              }
+            }
+          }
+        }
+
         const numValue = Number(rawValue)
 
         if (rawValue === undefined || rawValue === "" || isNaN(numValue)) {
@@ -47,22 +70,24 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
           break
         }
 
-        expression = expression.replace(`{${targetColId}}`, numValue.toString())
+        replacements.push({ token: match[0], value: numValue.toString() })
       }
 
       if (missingField) return "—"
 
+      // Aplicar los reemplazos numéricos globales en la ecuación
       replacements.forEach(({ token, value }) => {
-        // Use split/join to replace all instances globally and safely
         expression = expression.split(token).join(value)
       })
+
       if (expression.includes("{") || expression.includes("}")) {
         return "—"
       }
 
-      // Sanitización estricta por seguridad matemática
+      // Sanitización matemática estricta
       const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "")
       if (!sanitizedExpression.trim()) return "—"
+
       const result = new Function(`return (${sanitizedExpression})`)()
 
       if (result === null || result === undefined || isNaN(result) || !isFinite(result)) {
@@ -71,10 +96,11 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
 
       return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2)
     } catch (error) {
-      console.error("Formula parsing error:", error)
+      console.error("Formula parsing error in PDF multi-row support:", error)
       return "Error"
     }
   }
+
 
   // ── FUNCIÓN DE EXTRACCIÓN MEJORADA CONTRA STRINGS ESTÁTICOS ──
   const getRefColumnValue = (col: any, refColumn: any) => {
@@ -213,7 +239,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
 
                   //  CÁLCULO DE FÓRMULA EN FILA TEST
                   if (col.type === "formula") {
-                    value = evaluateFormula(col.formulaExpression, row.id, data)
+                    value = evaluateFormula(col.formulaExpression, row.id, data, customTemplate)
                   }
 
                   if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
@@ -275,7 +301,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                 let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")
 
                 if (col.type === "formula") {
-                  value = evaluateFormula(col.formulaExpression, row.id, data)
+                  value = evaluateFormula(col.formulaExpression, row.id, data, customTemplate)
                 }
 
                 // Limpieza si el string guardado en el form es la frase estática

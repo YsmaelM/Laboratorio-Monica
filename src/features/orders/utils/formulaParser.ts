@@ -1,56 +1,59 @@
-/**
- * Safely parses and evaluates mathematical formulas based on custom row inputs.
- */
-export function evaluateFormula(
+const evaluateFormula = (
     formulaExpression: string | undefined,
     rowId: string,
     data: Record<string, string | number>
-): string {
-    if (!formulaExpression) return "—";
+): string => {
+    if (!formulaExpression) return "—"
 
     try {
-        let expression = formulaExpression;
+        let expression = formulaExpression
 
-        // 1. Find all variables inside brackets: {col_id}
-        const tokenRegex = /\{([^}]+)\}/g;
-        let match;
-        let missingField = false;
+        // 1. Reemplazar las variables {id} por sus números reales
+        const tokenRegex = /\{([^}]+)\}/g
+        let match
+        let missingField = false
+        const replacements: Array<{ token: string; value: string }> = []
 
         while ((match = tokenRegex.exec(formulaExpression)) !== null) {
-            const targetColId = match[1];
-            const fieldKey = `${rowId}_${targetColId}`;
-            const rawValue = data[fieldKey];
-
-            // Convert value to a pure floating-point number
-            const numValue = Number(rawValue);
+            const targetColId = match[1]
+            const fieldKey = `${rowId}_${targetColId}`
+            const rawValue = data[fieldKey]
+            const numValue = Number(rawValue)
 
             if (rawValue === undefined || rawValue === "" || isNaN(numValue)) {
-                missingField = true; // Wait until the operator fills all fields
-                break;
+                missingField = true
+                break
             }
 
-            // Replace the token with the verified number
-            expression = expression.replace(`{${targetColId}}`, numValue.toString());
+            replacements.push({ token: match[0], value: numValue.toString() })
         }
 
-        if (missingField) return "—"; // Return placeholder if dependent variables are empty
+        if (missingField) return "—"
 
-        // 2. Sanitize expression strictly to avoid malicious code injections (XSS Security)
-        const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "");
+        replacements.forEach(({ token, value }) => {
+            expression = expression.split(token).join(value)
+        })
 
-        // 3. Execute math evaluation safely
-        // Function evaluates the string math safely without standard risks of eval()
-        const result = new Function(`return (${sanitizedExpression})`)();
+        if (expression.includes("{") || expression.includes("}")) {
+            return "—"
+        }
+
+        // ── 2. FILTRO DE SANITIZACIÓN ACTUALIZADO ──
+        // El mapa de caracteres permitidos sigue aceptando números, operadores básicos y el asterisco (*)
+        const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "")
+
+        if (!sanitizedExpression.trim()) return "—"
+
+        // 3. Ejecución directa (JavaScript procesará los '**' de forma nativa)
+        const result = new Function(`return (${sanitizedExpression})`)()
 
         if (result === null || result === undefined || isNaN(result) || !isFinite(result)) {
-            return "0";
+            return "0"
         }
 
-        // Return formatting based on whether it needs decimals (like Razón PT 1.25)
-        return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2);
-
+        return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2)
     } catch (error) {
-        console.error("Formula parsing error:", error);
-        return "Error";
+        console.error("Formula parsing error with native power:", error)
+        return "Error"
     }
 }
