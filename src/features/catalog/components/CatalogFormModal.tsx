@@ -13,7 +13,7 @@ const catalogSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   code: z.string().min(1, "El código es requerido"),
   category: z.string().min(1, "La categoría es requerida"),
-  format: z.enum(["simple", "custom", "culture"]),
+  format: z.enum(["simple", "custom", "culture", "profile"]),
   isQuickAction: z.boolean(),
   order: z.coerce.number().min(0, "Debe ser mayor o igual a 0"),
   unit: z.string().optional(),
@@ -280,12 +280,6 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
                     formatName={watch("name")}
                   />
                 </div>
-              </div>
-            )}
-
-            {initialData && watchedFormat !== "simple" && watchedFormat !== "custom" && (
-              <div className="sm:col-span-2 mt-4 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-400">
-                Nota: Para editar rangos de referencia y plantillas de pruebas complejas, usaremos un editor avanzado en una próxima actualización.
               </div>
             )}
           </form>

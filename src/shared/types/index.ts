@@ -58,7 +58,7 @@ export interface RefRange {
 }
 
 export interface ReferenceValue {
-  type: "single_point" | "two_point" | "group"
+  type: "single_point" | "two_point" | "group" | "sinRef"
   min?: number
   max?: number
   groups?: {

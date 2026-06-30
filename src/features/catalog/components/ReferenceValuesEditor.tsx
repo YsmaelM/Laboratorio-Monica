@@ -9,7 +9,7 @@ interface ReferenceValuesEditorProps {
 export default function ReferenceValuesEditor({ value, onChange }: ReferenceValuesEditorProps) {
   const currentType = value?.type || "two_point"
 
-  const handleTypeChange = (type: "single_point" | "two_point" | "group") => {
+  const handleTypeChange = (type: "single_point" | "two_point" | "group" | "sinRef") => {
     if (type === "single_point") {
       onChange({
         type,
@@ -21,7 +21,13 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
         min: value?.min || 0,
         max: value?.max || 0,
       })
-    } else {
+    }
+    else if (currentType === "sinRef") {
+      onChange({
+        type,
+      })
+    }
+    else {
       onChange({
         type,
         groups: value?.groups || [
@@ -85,11 +91,17 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
           onChange={(e) => handleTypeChange(e.target.value as any)}
           className="w-full rounded-xl border border-white/10 bg-surface-900 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         >
+          <option value="sinRef">Sin Val. Ref.</option>
           <option value="single_point">Un Punto (Ej: Hasta 5)</option>
           <option value="two_point">Dos Puntos (Ej: Desde 2 Hasta 5)</option>
           <option value="group">Por Grupo (Ej: Adultos, Niños, Hombres, Mujeres)</option>
         </select>
       </div>
+      {currentType === "sinRef" && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-white/80">sin val.ref.</label>
+        </div>
+      )}
 
       {currentType === "single_point" && (
         <div>
