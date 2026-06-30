@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, Beaker, FileSpreadsheet, Scale, Layers } from "lucide-react"
+import { Plus, Beaker, FileSpreadsheet, Scale, Layers, List } from "lucide-react"
 import type { TestCatalogItem } from "@/shared/types"
 import { useTestCatalog } from "@/features/orders/hooks/useTestCatalog"
 import { useCatalogMutation } from "../hooks/useCatalogMutation"
@@ -7,6 +7,7 @@ import CatalogTable from "../components/CatalogTable"
 import CatalogFormModal from "../components/CatalogFormModal"
 import ReferenceValuesTab from "../components/ReferenceValuesTab"
 import FormatsTab from "../components/FormatsTab"
+import ProfilesTab from "../components/ProfilesTab"
 
 export default function CatalogManagementPage() {
   const { catalog, loading, error } = useTestCatalog()
@@ -14,7 +15,7 @@ export default function CatalogManagementPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<TestCatalogItem | undefined>(undefined)
-  const [activeTab, setActiveTab] = useState<"tests" | "reference_values" | "formats">("tests")
+  const [activeTab, setActiveTab] = useState<"tests" | "reference_values" | "formats" | "profiles">("tests")
 
   const handleEdit = (item: TestCatalogItem) => {
     setEditingItem(item)
@@ -48,7 +49,7 @@ export default function CatalogManagementPage() {
             Administra las pruebas, perfiles, rangos de referencia, unidades y formatos de reporte.
           </p>
         </div>
-        
+
         {activeTab === "tests" && (
           <button
             onClick={handleCreate}
@@ -64,36 +65,43 @@ export default function CatalogManagementPage() {
       <div className="mb-6 flex border-b border-white/10">
         <button
           onClick={() => setActiveTab("tests")}
-          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${
-            activeTab === "tests"
-              ? "border-primary-500 text-primary-400"
-              : "border-transparent text-white/60 hover:text-white hover:border-white/10"
-          }`}
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${activeTab === "tests"
+            ? "border-primary-500 text-primary-400"
+            : "border-transparent text-white/60 hover:text-white hover:border-white/10"
+            }`}
         >
           <Layers className="h-4 w-4" />
           Pruebas
         </button>
         <button
           onClick={() => setActiveTab("reference_values")}
-          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${
-            activeTab === "reference_values"
-              ? "border-primary-500 text-primary-400"
-              : "border-transparent text-white/60 hover:text-white hover:border-white/10"
-          }`}
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${activeTab === "reference_values"
+            ? "border-primary-500 text-primary-400"
+            : "border-transparent text-white/60 hover:text-white hover:border-white/10"
+            }`}
         >
           <Scale className="h-4 w-4" />
           Valores de Referencia
         </button>
         <button
           onClick={() => setActiveTab("formats")}
-          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${
-            activeTab === "formats"
-              ? "border-primary-500 text-primary-400"
-              : "border-transparent text-white/60 hover:text-white hover:border-white/10"
-          }`}
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${activeTab === "formats"
+            ? "border-primary-500 text-primary-400"
+            : "border-transparent text-white/60 hover:text-white hover:border-white/10"
+            }`}
         >
           <FileSpreadsheet className="h-4 w-4" />
           Formatos
+        </button>
+        <button
+          onClick={() => setActiveTab("profiles")}
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${activeTab === "profiles"
+            ? "border-primary-500 text-primary-400"
+            : "border-transparent text-white/60 hover:text-white hover:border-white/10"
+            }`}
+        >
+          <List className="h-4 w-4" />
+          Perfiles
         </button>
       </div>
 
@@ -126,6 +134,9 @@ export default function CatalogManagementPage() {
 
           {activeTab === "formats" && (
             <FormatsTab items={catalog} onRefresh={handleSuccess} />
+          )}
+          {activeTab === "profiles" && (
+            <ProfilesTab items={catalog} onRefresh={handleSuccess} />
           )}
         </div>
       )}

@@ -49,7 +49,7 @@ export interface PatientSnapshot {
 // ─────────────────────────────────────────────
 // Test Catalog
 // ─────────────────────────────────────────────
-export type TestFormat = "simple" | "custom" | "culture"
+export type TestFormat = "simple" | "custom" | "culture" | "profile"
 
 export interface RefRange {
   male: { min: number; max: number }
@@ -147,6 +147,15 @@ export type FormatRow = EmptyRow | HeaderRow | TestRow | SimpleRow
 
 export interface CustomFormatTemplate {
   rows: FormatRow[]
+}
+
+export interface ProfileItem {
+  id: string
+  name: string
+  code: string
+  profileTemplate: ProfileTemplate
+  active: boolean
+  order: number
 }
 
 export interface TestCatalogItem {

@@ -1,5 +1,5 @@
 import type { TestCatalogItem } from "@/shared/types"
-import { Activity, Droplets, TestTube, FlaskConical, Syringe, LineSquiggle, ClockFading, Bubbles } from "lucide-react"
+import { Activity, Droplets, TestTube, FlaskConical, Syringe, LineSquiggle, ClockFading, Bubbles, Layout } from "lucide-react"
 
 interface QuickActionButtonsProps {
   catalog: TestCatalogItem[]
@@ -18,6 +18,7 @@ export default function QuickActionButtons({ catalog, onSelect }: QuickActionBut
       case "Tiempo de coagulacion": return <ClockFading className="h-6 w-6 text-purple-400" />
       case "Quimica": return <TestTube className="h-6 w-6 text-purple-400" />
       case "Custom": return <FlaskConical className="h-6 w-6 text-purple-400" />
+      case "Perfiles": return <Layout className="h-6 w-6 text-purple-400" />
       default: return <Activity className="h-6 w-6" />
     }
   }

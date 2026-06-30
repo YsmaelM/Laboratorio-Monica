@@ -1,8 +1,5 @@
 import type { TestEntry } from "@/shared/types"
 import SimpleTestForm from "./SimpleTestForm"
-import HematologyForm from "./HematologyForm"
-import UrinalysisForm from "./UrinalysisForm"
-import StoolForm from "./StoolForm"
 import CultureForm from "./CultureForm"
 import CustomTestForm from "./CustomTestForm"
 
@@ -16,12 +13,6 @@ export default function EntryFormFactory({ entry, onChange, patient }: EntryForm
   switch (entry.format) {
     case "simple":
       return <SimpleTestForm entry={entry} onChange={onChange} />
-    case "hematology":
-      return <HematologyForm entry={entry} onChange={onChange} />
-    case "urinalysis":
-      return <UrinalysisForm entry={entry} onChange={onChange} />
-    case "stool":
-      return <StoolForm entry={entry} onChange={onChange} />
     case "culture":
       return <CultureForm entry={entry} onChange={onChange} />
     case "custom":

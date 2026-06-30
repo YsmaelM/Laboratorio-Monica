@@ -23,13 +23,41 @@ export default function Step2TestSelection({
   const { catalog, loading, error } = useTestCatalog()
 
   const handleSelect = (catalogItem: TestCatalogItem) => {
-    // Avoid duplicates
-    if (selectedTests.some(t => t.catalogId === catalogItem.id)) {
-      return
+    // ── 1. CASO COMPUESTO: SI EL ELEMENTO SELECCIONADO ES UN PERFIL/COMBO ──
+    if (catalogItem.format === "profile" && catalogItem.profileTemplate?.sections) {
+      let newTests = [...selectedTests];
+      let addedCount = 0;
+
+      // Recorremos todas las secciones y campos dentro del perfil prediseñado
+      catalogItem.profileTemplate.sections.forEach((section) => {
+        section.fields.forEach((field) => {
+          // El field.key contiene el ID del examen real en el catálogo (ej: el id de Hemoglobina)
+          const childCatalogItem = catalog.find(item => item.id === field.key);
+
+          if (childCatalogItem) {
+            // Evitamos duplicar la prueba si el paciente ya la tenía agregada en la orden
+            if (!newTests.some(t => t.catalogId === childCatalogItem.id)) {
+              const newEntry = createTestEntry(childCatalogItem);
+              newTests.push(newEntry);
+              addedCount++;
+            }
+          }
+        });
+      });
+
+      if (addedCount > 0) {
+        onTestsChange(newTests);
+      }
+      return; // Finalizamos la ejecución para perfiles
     }
 
-    const newEntry = createTestEntry(catalogItem)
-    onTestsChange([...selectedTests, newEntry])
+    // ── 2. CASO SIMPLE: COMPORTAMIENTO NORMAL PARA EXÁMENES INDIVIDUALES ──
+    if (selectedTests.some(t => t.catalogId === catalogItem.id)) {
+      return;
+    }
+
+    const newEntry = createTestEntry(catalogItem);
+    onTestsChange([...selectedTests, newEntry]);
   }
 
   const handleRemove = (catalogId: string) => {
