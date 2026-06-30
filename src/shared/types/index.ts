@@ -49,7 +49,7 @@ export interface PatientSnapshot {
 // ─────────────────────────────────────────────
 // Test Catalog
 // ─────────────────────────────────────────────
-export type TestFormat = "simple" | "custom" | "hematology" | "urinalysis" | "stool" | "culture"
+export type TestFormat = "simple" | "custom" | "culture"
 
 export interface RefRange {
   male: { min: number; max: number }
@@ -202,31 +202,6 @@ export interface HematologySection {
   results: HematologyResultRow[]
 }
 
-export interface HematologyEntry extends TestEntryBase {
-  format: "hematology"
-  data: {
-    sections: HematologySection[]
-    smearNotes?: string
-  }
-}
-
-export interface UrinalysisEntry extends TestEntryBase {
-  format: "urinalysis"
-  data: {
-    physical: Record<string, string>
-    chemical: Record<string, string>
-    microscopic: Record<string, string>
-  }
-}
-
-export interface StoolEntry extends TestEntryBase {
-  format: "stool"
-  data: {
-    macroscopic: Record<string, string>
-    microscopic: Record<string, string>
-    chemical: Record<string, string>
-  }
-}
 
 export interface AntibiogramRow {
   antibiotic: string
@@ -258,9 +233,6 @@ export interface CustomTestEntry extends TestEntryBase {
 
 export type TestEntry =
   | SimpleTestEntry
-  | HematologyEntry
-  | UrinalysisEntry
-  | StoolEntry
   | CultureEntry
   | CustomTestEntry
 

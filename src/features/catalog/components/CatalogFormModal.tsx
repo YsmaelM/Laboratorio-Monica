@@ -13,7 +13,7 @@ const catalogSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   code: z.string().min(1, "El código es requerido"),
   category: z.string().min(1, "La categoría es requerida"),
-  format: z.enum(["simple", "custom", "hematology", "urinalysis", "stool", "culture"]),
+  format: z.enum(["simple", "custom", "culture"]),
   isQuickAction: z.boolean(),
   order: z.coerce.number().min(0, "Debe ser mayor o igual a 0"),
   unit: z.string().optional(),
@@ -41,14 +41,15 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
     reset,
     setValue,
     watch,
-  } = useForm<CatalogFormValues>({
-    resolver: zodResolver(catalogSchema),
+  } = useForm<z.infer<typeof catalogSchema>>({
+    resolver: zodResolver(catalogSchema) as any,
     defaultValues: {
       format: "simple",
       isQuickAction: false,
       order: 1,
       unit: "",
       method: "",
+      category: "",
     }
   })
 
@@ -62,7 +63,7 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
       setValue("format", initialData.format)
       setValue("isQuickAction", initialData.isQuickAction)
       setValue("order", initialData.order)
-      
+
       if (initialData.simpleDefaults) {
         setValue("unit", initialData.simpleDefaults.unit || "")
         setValue("method", initialData.simpleDefaults.method || "")
@@ -152,9 +153,8 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
               <input
                 type="text"
                 {...register("name")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.name ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.name ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>}
             </div>
@@ -164,40 +164,53 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
               <input
                 type="text"
                 {...register("code")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.code ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.code ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.code && <p className="mt-1 text-xs text-red-400">{errors.code.message}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Categoría *</label>
-              <input
-                type="text"
+              <select
                 {...register("category")}
-                placeholder="Ej. Química, Hematología"
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.category ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
-              />
-              {errors.category && <p className="mt-1 text-xs text-red-400">{errors.category.message}</p>}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.category
+                  ? "border-red-500/50 focus:border-red-500 focus:ring-red-500"
+                  : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
+              >
+                {/* Opción por defecto deshabilitada */}
+                <option value="" className="bg-surface-900 text-white/40">— Seleccionar Categoría —</option>
+
+                {/* Opciones del catálogo de laboratorio */}
+                <option value="Quimica" className="bg-surface-900">Química</option>
+                <option value="Hematologia" className="bg-surface-900">Hematología</option>
+                <option value="Coproanalisis" className="bg-surface-900">Coproanálisis</option>
+                <option value="Uroanalisis" className="bg-surface-900">Uroanálisis</option>
+                <option value="Tiempo de coagulacion" className="bg-surface-900">Tiempo de coagulacion</option>
+                <option value="Bacteriologia" className="bg-surface-900">Bacteriología</option>
+
+              </select>
+
+              {errors.category && (
+                <p className="mt-1 text-xs text-red-400">{errors.category.message}</p>
+              )}
             </div>
+
 
             <div>
               <label className="mb-1 block text-sm font-medium text-white/80">Formato *</label>
               <select
                 {...register("format")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.format ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.format ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               >
                 <option value="simple" className="bg-surface-900">Simple (1 resultado)</option>
                 <option value="custom" className="bg-surface-900">Customizado (Creador de Formato)</option>
-                <option value="hematology" className="bg-surface-900">Hematología</option>
+                {/* <option value="hematology" className="bg-surface-900">Hematología</option>
                 <option value="urinalysis" className="bg-surface-900">Uroanálisis</option>
                 <option value="stool" className="bg-surface-900">Coprológico</option>
-                <option value="culture" className="bg-surface-900">Cultivo</option>
+                <option value="culture" className="bg-surface-900">Cultivo</option> */}
               </select>
               {errors.format && <p className="mt-1 text-xs text-red-400">{errors.format.message}</p>}
             </div>
@@ -206,10 +219,9 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
               <label className="mb-1 block text-sm font-medium text-white/80">Orden (prioridad)</label>
               <input
                 type="number"
-                {...register("order")}
-                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${
-                  errors.order ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
-                }`}
+                {...register("order", { valueAsNumber: true })}
+                className={`w-full rounded-xl border bg-white/5 px-4 py-2.5 text-white focus:outline-none focus:ring-1 ${errors.order ? "border-red-500/50 focus:border-red-500 focus:ring-red-500" : "border-white/10 focus:border-primary-500 focus:ring-primary-500"
+                  }`}
               />
               {errors.order && <p className="mt-1 text-xs text-red-400">{errors.order.message}</p>}
             </div>
@@ -272,9 +284,9 @@ export default function CatalogFormModal({ isOpen, onClose, initialData, onSucce
             )}
 
             {initialData && watchedFormat !== "simple" && watchedFormat !== "custom" && (
-               <div className="sm:col-span-2 mt-4 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-400">
-                 Nota: Para editar rangos de referencia y plantillas de pruebas complejas, usaremos un editor avanzado en una próxima actualización.
-               </div>
+              <div className="sm:col-span-2 mt-4 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-400">
+                Nota: Para editar rangos de referencia y plantillas de pruebas complejas, usaremos un editor avanzado en una próxima actualización.
+              </div>
             )}
           </form>
 
