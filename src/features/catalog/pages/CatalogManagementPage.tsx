@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, Beaker, FileSpreadsheet, Scale, Layers, List } from "lucide-react"
+import { Plus, Beaker, FileSpreadsheet, Scale, Layers, List, Bubbles } from "lucide-react"
 import type { TestCatalogItem } from "@/shared/types"
 import { useTestCatalog } from "@/features/orders/hooks/useTestCatalog"
 import { useCatalogMutation } from "../hooks/useCatalogMutation"
@@ -8,6 +8,8 @@ import CatalogFormModal from "../components/CatalogFormModal"
 import ReferenceValuesTab from "../components/ReferenceValuesTab"
 import FormatsTab from "../components/FormatsTab"
 import ProfilesTab from "../components/ProfilesTab"
+import BacteriologyTab from "../components/BacteriologyTab"
+
 
 export default function CatalogManagementPage() {
   const { catalog, loading, error } = useTestCatalog()
@@ -15,7 +17,7 @@ export default function CatalogManagementPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<TestCatalogItem | undefined>(undefined)
-  const [activeTab, setActiveTab] = useState<"tests" | "reference_values" | "formats" | "profiles">("tests")
+  const [activeTab, setActiveTab] = useState<"tests" | "reference_values" | "formats" | "profiles" | "Bacteriologia">("tests")
 
   const handleEdit = (item: TestCatalogItem) => {
     setEditingItem(item)
@@ -103,6 +105,16 @@ export default function CatalogManagementPage() {
           <List className="h-4 w-4" />
           Perfiles
         </button>
+        <button
+          onClick={() => setActiveTab("Bacteriologia")}
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition ${activeTab === "Bacteriologia"
+            ? "border-primary-500 text-primary-400"
+            : "border-transparent text-white/60 hover:text-white hover:border-white/10"
+            }`}
+        >
+          <Bubbles className="h-4 w-4" />
+          Bacteriologia
+        </button>
       </div>
 
       {error && (
@@ -137,6 +149,9 @@ export default function CatalogManagementPage() {
           )}
           {activeTab === "profiles" && (
             <ProfilesTab items={catalog} onRefresh={handleSuccess} />
+          )}
+          {activeTab === "Bacteriologia" && (
+            <BacteriologyTab onRefresh={handleSuccess} />
           )}
         </div>
       )}

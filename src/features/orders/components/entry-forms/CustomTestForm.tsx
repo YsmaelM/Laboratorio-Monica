@@ -16,14 +16,29 @@ const getFormRefText = (col: any, patient: any) => {
       const pAge = patient.age ?? 0
       const pSex = patient.sex
 
+      //  CÓDIGO CORREGIDO Y EXACTO PARA SUSTITUIR:
       const matchedGroup = col.groups.find((g: any) => {
-        const nameLower = g.name.toLowerCase()
-        if (nameLower.includes("niño") || nameLower.includes("infantil") || nameLower.includes("pediat")) return pAge < 14
-        if (nameLower.includes("adulto")) return pAge >= 14
-        if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower === "m" || nameLower.includes("varon")) return pSex === "M"
-        if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower === "f") return pSex === "F"
-        return false
-      })
+        const nameLower = g.name.toLowerCase();
+
+        // 1. Si el grupo en tu catálogo se llama textualmente "Niños", aplica estrictamente para menores de 6 años
+        if (nameLower.includes("niño") || nameLower.includes("infantil") || nameLower.includes("niños") || nameLower.includes("pediat")) {
+          return pAge < 6;
+        }
+
+        // 2. Si el grupo se llama "Adultos", ahora abarcará correctamente a tu paciente de 12 años en adelante
+        if (nameLower.includes("adulto") || nameLower.includes("adultos")) {
+          return pAge >= 6; // O >= 12 según las tablas de tu laboratorio
+        }
+
+        // 3. Filtros por sexo (Hombres/Mujeres adultos de 12 o 14 años en adelante)
+        if (nameLower.includes("hombre") || nameLower.includes("hombres") || nameLower.includes("masculino") || nameLower === "m" || nameLower.includes("varon")) {
+          return pSex === "M" && pAge >= 12;
+        }
+        if (nameLower.includes("mujer") || nameLower.includes("mujeres") || nameLower.includes("femenino") || nameLower === "f") {
+          return pSex === "F" && pAge >= 12;
+        }
+        return false;
+      });
 
       if (matchedGroup) {
         return matchedGroup.type === "two_point"

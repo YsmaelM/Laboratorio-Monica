@@ -227,9 +227,12 @@ export interface CultureEntry extends TestEntryBase {
     organism?: string
     colonyCount?: string
     antibiogram?: AntibiogramRow[]
+    customNegativeText?: string
+    cultureResultNotes?: string // Stores the preset negative phrase selection
     notes?: string
   }
 }
+
 
 export interface CustomTestEntry extends TestEntryBase {
   format: "custom"
