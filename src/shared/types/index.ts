@@ -110,7 +110,7 @@ export interface FormatColumn {
   isFixed?: boolean                           // Si es un valor fijo (no editable)
   isHeaderOnly?: boolean                       // Si es solo cabecera/membrete (sin valor)
   formulaExpression?: string
-  refType?: "single_point" | "two_point" | "group" // Tipo interno del rango
+  refType?: "single_point" | "two_point" | "group" | "sinRef" // Tipo interno del rango
   min?: number
   max?: number
   groups?: {                               // Arreglo para grupos en columnas custom

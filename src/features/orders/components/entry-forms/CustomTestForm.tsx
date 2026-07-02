@@ -188,17 +188,14 @@ function CellInput({
       let targetMax = refColumn.max
 
       // Evaluamos refType o verificamos directamente la existencia del arreglo de grupos
-      if ((refColumn.refType === "group" || Array.isArray(refColumn.groups)) && patient) {
-
+      if (Array.isArray(refColumn.groups) && patient) {
         const pAge = patient.age ?? 0
-
-        // Buscamos el grupo de referencia evaluando los rangos numéricos de edad
-        const matchedGroup = refColumn.groups.find((g: any) => {
+        // Añadimos el operador "?" por seguridad
+        const matchedGroup = refColumn.groups?.find((g: any) => {
           const minA = g.minAge !== undefined ? g.minAge : 0
           const maxA = g.maxAge !== undefined ? g.maxAge : 120
           return pAge >= minA && pAge < maxA
         })
-
         if (matchedGroup) {
           targetMin = matchedGroup.min
           targetMax = matchedGroup.max
@@ -221,6 +218,7 @@ function CellInput({
         value={value}
         onChange={(e) => onChange(fieldKey, e.target.value)}
         placeholder="0"
+        autoFocus={isFirst}
         className={`${inputBase} ${borderStyles}`}
       />
     )

@@ -2,7 +2,7 @@ import { Edit2, AlertCircle, Search, Loader2 } from "lucide-react"
 import type { TestCatalogItem } from "@/shared/types"
 import { migrateRefRange } from "../utils/migrateRefRanges"
 import { useState, useEffect } from "react"
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore"
+import { collection, query, orderBy, getDocs } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 
 interface ReferenceValuesTabProps {

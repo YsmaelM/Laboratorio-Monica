@@ -6,7 +6,6 @@ import { Loader2 } from "lucide-react"
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"))
-const PlaceholderPage = lazy(() => import("@/app/PlaceholderPage"))
 const OrderWorkflowPage = lazy(() => import("@/features/orders/pages/OrderWorkflowPage"))
 const OrderHistoryPage = lazy(() => import("@/features/orders/pages/OrderHistoryPage"))
 const LabSettingsPage = lazy(() => import("@/features/settings/pages/LabSettingsPage"))

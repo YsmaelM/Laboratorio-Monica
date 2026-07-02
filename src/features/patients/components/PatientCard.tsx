@@ -12,7 +12,18 @@ export default function PatientCard({ patient, onClear }: PatientCardProps) {
     if (p.age !== undefined) return p.age
     const dobTimestamp = p.dateOfBirth
     if (!dobTimestamp) return "N/A"
-    const dob = dobTimestamp.toDate ? dobTimestamp.toDate() : new Date(dobTimestamp)
+    let dob: Date;
+    try {
+      if (dobTimestamp && typeof dobTimestamp === "object" && "toDate" in dobTimestamp && typeof (dobTimestamp as any).toDate === "function") {
+        dob = (dobTimestamp as any).toDate();
+      } else if (dobTimestamp && typeof dobTimestamp === "object" && "seconds" in dobTimestamp) {
+        dob = new Date((dobTimestamp as any).seconds * 1000);
+      } else {
+        dob = new Date(dobTimestamp as any);
+      }
+    } catch {
+      dob = new Date();
+    }
     const diff_ms = Date.now() - dob.getTime()
     const age_dt = new Date(diff_ms)
     return Math.abs(age_dt.getUTCFullYear() - 1970)

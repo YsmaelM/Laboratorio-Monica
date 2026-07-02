@@ -34,11 +34,6 @@ export function PatientInfoBlock({ patient, orderDate, referringDoctor }: Patien
     day: "numeric",
   })
 
-  const timeStr = orderDate.toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-
   return (
     <View style={s.patientBlock}>
       <View style={s.patientCol}>

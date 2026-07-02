@@ -13,14 +13,14 @@ import toast from "react-hot-toast"
 
 export default function OrderWorkflowPage() {
   const { generateAndSavePdf, isGenerating, error: reportError } = useGenerateReport()
-  const [searchParams, setSearchParams] = useSearchParams()
-  
+  const [searchParams] = useSearchParams()
+
   const [step, setStep] = useState<1 | 2 | 3 | "done">(1)
   const [patient, setPatient] = useState<Patient | null>(null)
   const [selectedTests, setSelectedTests] = useState<TestEntry[]>([])
   const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null)
-  
+
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [isLoadingEdit, setIsLoadingEdit] = useState(false)
 
@@ -94,6 +94,15 @@ export default function OrderWorkflowPage() {
 
   const currentStep = step === "done" ? 3 : step
 
+  if (isLoadingEdit) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-950 text-white/50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
+        <p className="mt-4 text-sm font-medium">Cargando datos de la orden para edición...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-5xl py-6 relative">
       {/* Step Indicator */}
@@ -108,13 +117,12 @@ export default function OrderWorkflowPage() {
               <div className={`h-[2px] w-12 ${currentStep >= num ? "bg-primary-500/40" : "bg-white/10"}`} />
             )}
             <div className={`flex items-center gap-2 ${currentStep >= num ? "text-primary-400" : "text-white/40"}`}>
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${
-                step === "done" && num === 3
-                  ? "border-emerald-400 bg-emerald-400/20 text-emerald-400"
-                  : currentStep >= num
-                    ? "border-primary-400 bg-primary-400/20"
-                    : "border-white/20"
-              }`}>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${step === "done" && num === 3
+                ? "border-emerald-400 bg-emerald-400/20 text-emerald-400"
+                : currentStep >= num
+                  ? "border-primary-400 bg-primary-400/20"
+                  : "border-white/20"
+                }`}>
                 {step === "done" && num === 3 ? <CheckCircle2 className="h-4 w-4" /> : num}
               </div>
               <span className="hidden font-medium sm:inline">{label}</span>

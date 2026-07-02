@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Shield, Plus, Trash2, Loader2, Save, FileText, Activity } from "lucide-react"
+import { Shield, Plus, Trash2, Loader2, FileText, Activity } from "lucide-react"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import toast from "react-hot-toast"

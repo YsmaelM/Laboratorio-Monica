@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { Layout, Plus, Pencil, Trash2, X, Save, Search, CheckCircle2, ChevronRight } from "lucide-react"
-import type { TestCatalogItem, ProfileTemplate, ProfileSection, ProfileField } from "@/shared/types"
+import { Layout, Plus, Pencil, Trash2, X, Save, Search, CheckCircle2, } from "lucide-react"
+import type { TestCatalogItem, ProfileTemplate, ProfileField } from "@/shared/types"
 import { useCatalogMutation } from "../hooks/useCatalogMutation"
 import toast from "react-hot-toast"
 
