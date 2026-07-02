@@ -9,36 +9,20 @@ interface CustomTestFormProps {
 const inputBase =
   "w-full rounded-xl border px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 transition-all duration-200"
 
-// ── FUNCIÓN DE EXTRACCIÓN DINÁMICA DE RANGOS PARA LA PANTALLA ──
+// ── FUNCIÓN DE EXTRACCIÓN DINÁMICA DE RANGOS PARA LA PANTALLA (POR INTERVALOS NUMÉRICOS) ──
 const getFormRefText = (col: any, patient: any) => {
   if (col && Array.isArray(col.groups) && col.groups.length > 0) {
     if (patient) {
       const pAge = patient.age ?? 0
-      const pSex = patient.sex
 
-      //  CÓDIGO CORREGIDO Y EXACTO PARA SUSTITUIR:
+      // RADAR MATEMÁTICO: Buscamos el grupo exacto donde encaja la edad del paciente
       const matchedGroup = col.groups.find((g: any) => {
-        const nameLower = g.name.toLowerCase();
+        const minA = g.minAge !== undefined ? g.minAge : 0
+        const maxA = g.maxAge !== undefined ? g.maxAge : 120
 
-        // 1. Si el grupo en tu catálogo se llama textualmente "Niños", aplica estrictamente para menores de 6 años
-        if (nameLower.includes("niño") || nameLower.includes("infantil") || nameLower.includes("niños") || nameLower.includes("pediat")) {
-          return pAge < 6;
-        }
-
-        // 2. Si el grupo se llama "Adultos", ahora abarcará correctamente a tu paciente de 12 años en adelante
-        if (nameLower.includes("adulto") || nameLower.includes("adultos")) {
-          return pAge >= 6; // O >= 12 según las tablas de tu laboratorio
-        }
-
-        // 3. Filtros por sexo (Hombres/Mujeres adultos de 12 o 14 años en adelante)
-        if (nameLower.includes("hombre") || nameLower.includes("hombres") || nameLower.includes("masculino") || nameLower === "m" || nameLower.includes("varon")) {
-          return pSex === "M" && pAge >= 12;
-        }
-        if (nameLower.includes("mujer") || nameLower.includes("mujeres") || nameLower.includes("femenino") || nameLower === "f") {
-          return pSex === "F" && pAge >= 12;
-        }
-        return false;
-      });
+        // Evaluamos si la edad real del paciente cae dentro del tramo (Desde minAge hasta MaxAge)
+        return pAge >= minA && pAge < maxA
+      })
 
       if (matchedGroup) {
         return matchedGroup.type === "two_point"
@@ -46,7 +30,10 @@ const getFormRefText = (col: any, patient: any) => {
           : `Hasta ${matchedGroup.max ?? 0}`
       }
     }
-    return col.groups.map((g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min}-${g.max}` : g.max}`).join(" | ")
+    // Fallback si no hay paciente en pantalla: listamos los rangos de todos los grupos numéricos
+    return col.groups
+      .map((g: any) => `${g.name} (${g.minAge ?? 0}-${g.maxAge ?? 120}a): ${g.type === "two_point" ? `${g.min ?? 0}-${g.max ?? 0}` : g.max ?? 0}`)
+      .join(" \n ")
   }
   return col.defaultValue ?? ""
 }
@@ -144,6 +131,7 @@ function CellInput({
   onChange,
   refColumn,
   patient,
+  isFirst,
 }: {
   col: FormatColumn
   rowId: string
@@ -151,6 +139,7 @@ function CellInput({
   onChange: (key: string, val: string) => void
   refColumn?: FormatColumn
   patient?: any
+  isFirst?: boolean
 }) {
   const fieldKey = `${rowId}_${col.id}`
 
@@ -193,9 +182,33 @@ function CellInput({
 
     if (!isExcluded && value !== "" && !isNaN(Number(value)) && refColumn) {
       const numValue = Number(value)
-      if (refColumn.min !== undefined && numValue < refColumn.min) {
+
+      // ── NUEVO RADAR DE EDAD POR INTERVALOS NUMÉRICOS EN LA CELDA ──
+      let targetMin = refColumn.min
+      let targetMax = refColumn.max
+
+      // Evaluamos refType o verificamos directamente la existencia del arreglo de grupos
+      if ((refColumn.refType === "group" || Array.isArray(refColumn.groups)) && patient) {
+
+        const pAge = patient.age ?? 0
+
+        // Buscamos el grupo de referencia evaluando los rangos numéricos de edad
+        const matchedGroup = refColumn.groups.find((g: any) => {
+          const minA = g.minAge !== undefined ? g.minAge : 0
+          const maxA = g.maxAge !== undefined ? g.maxAge : 120
+          return pAge >= minA && pAge < maxA
+        })
+
+        if (matchedGroup) {
+          targetMin = matchedGroup.min
+          targetMax = matchedGroup.max
+        }
+      }
+
+      // Evaluación matemática final con el rango del grupo detectado
+      if (targetMin !== undefined && numValue < targetMin) {
         borderStyles = "border-amber-500/50 bg-amber-500/5 focus:border-amber-500 focus:ring-amber-500 text-amber-300"
-      } else if (refColumn.max !== undefined && numValue > refColumn.max) {
+      } else if (targetMax !== undefined && numValue > targetMax) {
         borderStyles = "border-red-500/50 bg-red-500/5 focus:border-red-500 focus:ring-red-500 text-red-300"
       } else {
         borderStyles = "border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500"
@@ -252,6 +265,7 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
   }
 
   let simpleRowCount = 0
+  let isFirstEditableInputFound = false
 
   return (
     <div className="space-y-3">
@@ -288,16 +302,25 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
                     {col.isHeaderOnly ? (
                       <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm font-semibold text-primary-400">{col.label}</div>
                     ) : col.isFixed ? (
-                      <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm text-white/70">{value || "—"}</div>
+                      <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm whitespace-pre-line text-white/70">{value || "—"}</div>
                     ) : (
-                      <CellInput
-                        col={col}
-                        rowId={row.id}
-                        value={value}
-                        onChange={updateField}
-                        refColumn={refColumn}
-                        patient={patient}
-                      />
+                      // Modificación directa aquí:
+                      (() => {
+                        const shouldFocus = !isFirstEditableInputFound && col.type !== "formula";
+                        if (shouldFocus) isFirstEditableInputFound = true;
+
+                        return (
+                          <CellInput
+                            col={col}
+                            rowId={row.id}
+                            value={value}
+                            onChange={updateField}
+                            refColumn={refColumn}
+                            patient={patient}
+                            isFirst={shouldFocus} // ← Pasamos la propiedad de enfoque
+                          />
+                        );
+                      })()
                     )}
                   </div>
                 )
@@ -336,18 +359,27 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
                 return (
                   <div key={col.id}>
                     {col.isHeaderOnly ? (
-                      <div className="flex h-9 items-center px-1 text-sm font-semibold text-primary-400 truncate">{col.label}</div>
+                      <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm font-semibold text-primary-400">{col.label}</div>
                     ) : col.isFixed ? (
-                      <div className="flex h-9 items-center px-1 text-sm font-medium text-white/70 truncate">{value || "—"}</div>
+                      <div className="flex h-9 items-center px-3 rounded-xl border border-white/5 bg-white/2 text-sm text-white/70">{value || "—"}</div>
                     ) : (
-                      <CellInput
-                        col={col}
-                        rowId={row.id}
-                        value={value}
-                        onChange={updateField}
-                        refColumn={refColumn}
-                        patient={patient}
-                      />
+                      // Modificación directa aquí:
+                      (() => {
+                        const shouldFocus = !isFirstEditableInputFound && col.type !== "formula";
+                        if (shouldFocus) isFirstEditableInputFound = true;
+
+                        return (
+                          <CellInput
+                            col={col}
+                            rowId={row.id}
+                            value={value}
+                            onChange={updateField}
+                            refColumn={refColumn}
+                            patient={patient}
+                            isFirst={shouldFocus} // ← Pasamos la propiedad de enfoque
+                          />
+                        );
+                      })()
                     )}
                   </div>
                 )

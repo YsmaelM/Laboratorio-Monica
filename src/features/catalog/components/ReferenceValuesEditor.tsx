@@ -21,18 +21,16 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
         min: value?.min || 0,
         max: value?.max || 0,
       })
-    }
-    else if (currentType === "sinRef") {
+    } else if (type === "sinRef") {
       onChange({
         type,
       })
-    }
-    else {
+    } else {
       onChange({
         type,
         groups: value?.groups || [
-          { name: "Adultos", type: "two_point", min: 0, max: 0 },
-          { name: "Niños", type: "single_point", max: 0 },
+          { name: "Adultos", type: "two_point", min: 0, max: 0, minAge: 12, maxAge: 120 },
+          { name: "Niños", type: "single_point", max: 0, minAge: 0, maxAge: 12 },
         ],
       })
     }
@@ -62,7 +60,7 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
   const addGroup = () => {
     const updatedGroups = [
       ...(value?.groups || []),
-      { name: "Nuevo Grupo", type: "two_point" as const, min: 0, max: 0 },
+      { name: "Nuevo Grupo", type: "two_point" as const, min: 0, max: 0, minAge: 0, maxAge: 120 },
     ]
     onChange({
       ...value,
@@ -76,6 +74,7 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
     const updatedGroups = value.groups.filter((_, i) => i !== index)
     onChange({
       ...value,
+      type: "group",
       groups: updatedGroups,
     })
   }
@@ -97,9 +96,10 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
           <option value="group">Por Grupo (Ej: Adultos, Niños, Hombres, Mujeres)</option>
         </select>
       </div>
+
       {currentType === "sinRef" && (
-        <div>
-          <label className="mb-1 block text-sm font-medium text-white/80">sin val.ref.</label>
+        <div className="py-2 text-xs text-white/40 italic">
+          No se configurarán valores de referencia para esta columna.
         </div>
       )}
 
@@ -147,8 +147,8 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
       {currentType === "group" && (
         <div className="space-y-4">
           {value?.groups?.map((group, index) => (
-            <div key={index} className="relative rounded-xl border border-white/5 bg-white/5 p-3">
-              <div className="mb-3 flex items-center justify-between gap-2">
+            <div key={index} className="relative rounded-xl border border-white/5 bg-white/5 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-2">
                 <input
                   type="text"
                   value={group.name}
@@ -159,13 +159,40 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
                 <button
                   type="button"
                   onClick={() => removeGroup(index)}
-                  className="rounded-lg p-1.5 text-white/40 hover:bg-red-500/10 hover:text-red-400"
+                  className="rounded-lg p-1.5 text-white/40 hover:bg-red-500/10 hover:text-red-400 transition"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* ── NUEVA SECCIÓN: TRÁMITE ETARIO DEL GRUPO (EDADES) ── */}
+              <div className="grid grid-cols-2 gap-3 border-t border-white/5 pt-2">
+                <div>
+                  <label className="mb-1 block text-[10px] text-white/40">Edad Mínima (Años)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={group.minAge ?? ""}
+                    onChange={(e) => handleGroupChange(index, "minAge", e.target.value === "" ? 0 : Number(e.target.value))}
+                    className="w-full rounded-lg border border-white/10 bg-surface-900 px-2 py-1 text-xs text-white"
+                    placeholder="Ej. 0"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] text-white/40">Edad Máxima (Años)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={group.maxAge ?? ""}
+                    onChange={(e) => handleGroupChange(index, "maxAge", e.target.value === "" ? 120 : Number(e.target.value))}
+                    className="w-full rounded-lg border border-white/10 bg-surface-900 px-2 py-1 text-xs text-white"
+                    placeholder="Ej. 12"
+                  />
+                </div>
+              </div>
+
+              {/* Rangos del Modelo Clínico */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 border-t border-white/5 pt-2">
                 <div>
                   <label className="mb-1 block text-xs text-white/60">Modelo</label>
                   <select
@@ -223,10 +250,10 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
           <button
             type="button"
             onClick={addGroup}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/20 bg-white/5 py-2.5 text-sm font-medium text-white hover:bg-white/10"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-2.5 text-xs font-medium text-white/60 hover:bg-white/5 hover:text-white transition"
           >
             <Plus className="h-4 w-4" />
-            Agregar Grupo
+            Agregar Grupo de Referencia
           </button>
         </div>
       )}

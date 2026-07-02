@@ -56,7 +56,6 @@ export interface RefRange {
   female: { min: number; max: number }
   child?: { min: number; max: number }
 }
-
 export interface ReferenceValue {
   type: "single_point" | "two_point" | "group" | "sinRef"
   min?: number
@@ -66,6 +65,8 @@ export interface ReferenceValue {
     type: "single_point" | "two_point"
     min?: number
     max: number
+    minAge?: number
+    maxAge?: number
   }[]
 }
 
@@ -128,7 +129,7 @@ export interface EmptyRow {
 export interface HeaderRow {
   id: string
   type: "header"
-  text: string                                 // "Análisis Macroscópico:"
+  text: string
 }
 
 export interface TestRow {
@@ -213,6 +214,7 @@ export interface HematologySection {
 
 
 export interface AntibiogramRow {
+  id: any
   antibiotic: string
   result: "S" | "I" | "R"
   mic?: string

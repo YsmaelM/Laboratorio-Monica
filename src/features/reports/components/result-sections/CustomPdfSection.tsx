@@ -8,9 +8,9 @@ interface CustomPdfSectionProps {
 }
 
 export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
-  const { customTemplate, data } = entry
-  console.log("Estructura de filas que llegan al PDF:", JSON.stringify(customTemplate?.rows, null, 2));
-  console.log(" Datos del paciente que recibe el PDF Custom:", patient);
+  const { data } = entry
+  const customTemplate = entry.customTemplate; // ← Acceso directo y seguro
+  console.log("🛠️ PARÁMETRO PACIENTE EN PDF:", patient);
 
   if (!customTemplate || customTemplate.rows.length === 0) {
     return (
@@ -20,37 +20,29 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
 
   let simpleRowCount = 0
 
-  // ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS PARA EL PDF (SOPORTE MULTI-FILA EN CASCADA) ──
+  // ── MOTOR EVALUADOR DE FÓRMULAS AUTOMÁTICAS PARA EL PDF ──
   const evaluateFormula = (
     formulaExpression: string | undefined,
-    currentRowId: string,
+    rowId: string,
     data: Record<string, string | number>,
     customTemplate?: any
   ): string => {
     if (!formulaExpression) return "—"
-
     try {
       let expression = formulaExpression
       const tokenRegex = /\{([^}]+)\}/g
       let match
       let missingField = false
       const replacements: Array<{ token: string; value: string }> = []
-
       while ((match = tokenRegex.exec(formulaExpression)) !== null) {
-        const targetColId = match[1] // Extrae el ID limpio sin las llaves {}
-
-        // 1. Intentar buscar primero en la fila actual
-        let fieldKey = `${currentRowId}_${targetColId}`
+        const targetColId = match[1]
+        let fieldKey = `${rowId}_${targetColId}`
         let rawValue = data[fieldKey]
-
-        // 2. RADAR MULTI-FILA EXHAUSTIVO EN EL PDF
         if ((rawValue === undefined || rawValue === "") && customTemplate?.rows) {
           for (const row of customTemplate.rows) {
             if (row.columns && Array.isArray(row.columns)) {
               const foundCol = row.columns.find((c: any) => c.id === targetColId)
-
               if (foundCol) {
-                // Si la columna encontrada arriba es OTRA fórmula, la calculamos en cascada inmediatamente
                 if (foundCol.type === "formula") {
                   rawValue = evaluateFormula(foundCol.formulaExpression, row.id, data, customTemplate)
                 } else {
@@ -62,38 +54,22 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
             }
           }
         }
-
         const numValue = Number(rawValue)
-
         if (rawValue === undefined || rawValue === "" || isNaN(numValue)) {
           missingField = true
           break
         }
-
         replacements.push({ token: match[0], value: numValue.toString() })
       }
-
       if (missingField) return "—"
-
-      // Aplicar los reemplazos numéricos globales en la ecuación
       replacements.forEach(({ token, value }) => {
         expression = expression.split(token).join(value)
       })
-
-      if (expression.includes("{") || expression.includes("}")) {
-        return "—"
-      }
-
-      // Sanitización matemática estricta
+      if (expression.includes("{") || expression.includes("}")) return "—"
       const sanitizedExpression = expression.replace(/[^0-9+\-*/().\s]/g, "")
       if (!sanitizedExpression.trim()) return "—"
-
       const result = new Function(`return (${sanitizedExpression})`)()
-
-      if (result === null || result === undefined || isNaN(result) || !isFinite(result)) {
-        return "0"
-      }
-
+      if (result === null || result === undefined || isNaN(result) || !isFinite(result)) return "0"
       return Number(result) % 1 === 0 ? result.toString() : Number(result).toFixed(2)
     } catch (error) {
       console.error("Formula parsing error in PDF multi-row support:", error)
@@ -101,50 +77,22 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
     }
   }
 
-
-  // ── FUNCIÓN DE EXTRACCIÓN MEJORADA CONTRA STRINGS ESTÁTICOS ──
+  // ── FUNCIÓN DE EXTRACCIÓN GLOBAL: SIEMPRE MUESTRA TODOS LOS RANGOS EN VERTICAL ──
   const getRefColumnValue = (col: any, refColumn: any) => {
-    if (col && Array.isArray(col.groups) && col.groups.length > 0) {
-      if (patient) {
-        const pAge = patient.age ?? 0;
-        const pSex = patient.sex;
+    // Buscamos el origen del arreglo de grupos en la columna de referencia de la fila
+    const activeGroups = refColumn?.groups || col?.groups || col?.referenceValue?.groups;
 
-        //  CÓDIGO CORREGIDO Y EXACTO PARA SUSTITUIR:
-        const matchedGroup = col.groups.find((g: any) => {
-          const nameLower = g.name.toLowerCase();
-
-          // 1. Si el grupo en tu catálogo se llama textualmente "Niños", aplica estrictamente para menores de 6 años
-          if (nameLower.includes("niño") || nameLower.includes("infantil") || nameLower.includes("pediat")) {
-            return pAge < 6;
-          }
-
-          // 2. Si el grupo se llama "Adultos", ahora abarcará correctamente a tu paciente de 12 años en adelante
-          if (nameLower.includes("adulto")) {
-            return pAge >= 6; // O >= 12 según las tablas de tu laboratorio
-          }
-
-          // 3. Filtros por sexo (Hombres/Mujeres adultos de 12 o 14 años en adelante)
-          if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower === "m" || nameLower.includes("varon")) {
-            return pSex === "M" && pAge >= 12;
-          }
-          if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower === "f") {
-            return pSex === "F" && pAge >= 12;
-          }
-          return false;
-        });
-
-
-        if (matchedGroup) {
-          return matchedGroup.type === "two_point"
-            ? `${matchedGroup.min ?? 0} - ${matchedGroup.max ?? 0}`
-            : `Hasta ${matchedGroup.max ?? 0}`;
-        }
-      }
-      return col.groups.map((g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min}-${g.max}` : g.max}`).join(" | ");
+    if (Array.isArray(activeGroups) && activeGroups.length > 0) {
+      // ── CAMBIO CLAVE: Eliminamos el buscador de grupo único para el texto visual.
+      // Retornamos directamente el array mapeado completo para que el renderizador lo apile hacia abajo.
+      return activeGroups.map(
+        (g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0} - ${g.max ?? 0}` : `Hasta ${g.max ?? 0}`}`
+      );
     }
 
+    // Fallback si la celda contiene un texto fijo por defecto del catálogo
     const dValue = col.defaultValue ?? "";
-    if (dValue.toLowerCase().includes("desglose") || dValue.toLowerCase().includes("grupo")) {
+    if (typeof dValue === "string" && (dValue.toLowerCase().includes("desglose") || dValue.toLowerCase().includes("grupo"))) {
       if (refColumn && refColumn.min !== undefined && refColumn.max !== undefined) {
         return `${refColumn.min} - ${refColumn.max}`;
       }
@@ -152,65 +100,48 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
         return `Hasta ${refColumn.max}`;
       }
     }
-
     return dValue;
   };
 
+  // ── FUNCIÓN DE EVALUACIÓN DE ALERTAS POR INTERVALOS DE EDAD ──
   const checkCustomAlerts = (value: string, refColumn: any, currentColumn: any) => {
     let isHigh = false
     let isLow = false
     const numValue = Number(value)
-
-    if (!refColumn || value === "" || isNaN(numValue) || !currentColumn) {
+    if (value === "" || isNaN(numValue) || !currentColumn) {
       return { isHigh, isLow }
     }
-
     const labelLower = (currentColumn.label || "").toLowerCase()
-    if (
-      labelLower.includes("paciente") ||
-      labelLower.includes("control") ||
-      labelLower.includes("segundo") ||
-      labelLower.includes("muestra") ||
-      labelLower.includes("tiempo")
-    ) {
+    if (labelLower.includes("paciente") || labelLower.includes("control") || labelLower.includes("segundo") || labelLower.includes("muestra")) {
       return { isHigh, isLow }
     }
 
-    let targetMin = refColumn.min
-    let targetMax = refColumn.max
+    const activeGroups = refColumn?.groups || currentColumn?.groups || refColumn?.referenceValue?.groups;
+    let targetMin = refColumn?.min ?? currentColumn?.min;
+    let targetMax = refColumn?.max ?? currentColumn?.max;
 
-    if (refColumn.refType === "group" && Array.isArray(refColumn.groups) && patient) {
-      const pAge = patient.age ?? 0
-      const pSex = patient.sex
+    if (Array.isArray(activeGroups) && patient) {
+      const pAge = patient.age ?? 0;
+      const pSex = (patient.sex || "").toUpperCase();
 
-      //  CÓDIGO CORREGIDO Y EXACTO PARA SUSTITUIR:
-      const matchedGroup = refColumn.groups.find((g: any) => {
-        const nameLower = g.name.toLowerCase();
+      const matchedGroup = activeGroups.find((g: any) => {
+        const minA = g.minAge !== undefined ? g.minAge : 0;
+        const maxA = g.maxAge !== undefined ? g.maxAge : 120;
+        const ageMatches = pAge >= minA && pAge < maxA;
 
-        // 1. Si el grupo en tu catálogo se llama textualmente "Niños", aplica estrictamente para menores de 6 años
-        if (nameLower.includes("niño") || nameLower.includes("infantil") || nameLower.includes("pediat")) {
-          return pAge < 6;
+        const nameLower = (g.name || "").toLowerCase();
+        let sexMatches = true;
+        if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower.includes("varon")) {
+          sexMatches = pSex === "M" || pSex === "MASCULINO";
+        } else if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower.includes("dama")) {
+          sexMatches = pSex === "F" || pSex === "FEMENINO";
         }
-
-        // 2. Si el grupo se llama "Adultos", ahora abarcará correctamente a tu paciente de 12 años en adelante
-        if (nameLower.includes("adulto")) {
-          return pAge >= 6; // O >= 12 según las tablas de tu laboratorio
-        }
-
-        // 3. Filtros por sexo (Hombres/Mujeres adultos de 12 o 14 años en adelante)
-        if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower === "m" || nameLower.includes("varon")) {
-          return pSex === "M" && pAge >= 12;
-        }
-        if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower === "f") {
-          return pSex === "F" && pAge >= 12;
-        }
-        return false;
+        return ageMatches && sexMatches;
       });
 
-
       if (matchedGroup) {
-        targetMin = matchedGroup.min
-        targetMax = matchedGroup.max
+        targetMin = matchedGroup.min;
+        targetMax = matchedGroup.max;
       }
     }
 
@@ -219,7 +150,6 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
 
     return { isHigh, isLow }
   }
-
   return (
     <View>
       {customTemplate.rows.map((row) => {
@@ -269,12 +199,9 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                   const dynamicRef = getRefColumnValue(col, refColumn)
                   let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")
 
-                  //  CÁLCULO DE FÓRMULA EN FILA TEST
-                  if (col.type === "formula") {
+                  if (col.type === "formula" || (col as any).formulaExpression) {
                     value = evaluateFormula(col.formulaExpression, row.id, data, customTemplate)
-                  }
-
-                  if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
+                  } else if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
                     value = dynamicRef;
                   }
 
@@ -284,18 +211,21 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                     ? checkCustomAlerts(value, refColumn, col)
                     : { isHigh: false, isLow: false }
 
+                  // ── NUEVO RENDERIZADO CON SOPORTE PARA SALTO DE LÍNEA VERTICAL EN TEST ──
                   return (
-                    <Text
-                      key={col.id}
-                      style={[
-                        isResultColumn ? s.tableCellBold : s.tableCell,
-                        { flex },
-                        col.isHeaderOnly ? { fontFamily: "Helvetica-Bold" } : {},
-                        isHigh ? s.flagHigh : isLow ? s.flagLow : {}
-                      ]}
-                    >
-                      {value || "—"} {isHigh ? "↑" : isLow ? "↓" : ""}
-                    </Text>
+                    <View key={col.id} style={[{ flex }, col.isHeaderOnly ? { fontFamily: "Helvetica-Bold" } : {}]}>
+                      {Array.isArray(value) ? (
+                        value.map((line, lineIdx) => (
+                          <Text key={lineIdx} style={[s.tableCell, { fontSize: 7.5, marginBottom: 1, color: "#475569" }]}>
+                            {line}
+                          </Text>
+                        ))
+                      ) : (
+                        <Text style={[isResultColumn ? s.tableCellBold : s.tableCell, isHigh ? s.flagHigh : isLow ? s.flagLow : {}]}>
+                          {`${value || "—"}${isHigh ? " ↑" : isLow ? " ↓" : ""}`}
+                        </Text>
+                      )}
+                    </View>
                   )
                 })}
               </View>
@@ -332,12 +262,9 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                 const dynamicRef = getRefColumnValue(col, refColumn)
                 let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")
 
-                if (col.type === "formula") {
+                if (col.type === "formula" || (col as any).formulaExpression) {
                   value = evaluateFormula(col.formulaExpression, row.id, data, customTemplate)
-                }
-
-                // Limpieza si el string guardado en el form es la frase estática
-                if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
+                } else if (typeof value === "string" && (value.toLowerCase().includes("desglose") || value.toLowerCase().includes("grupo"))) {
                   value = dynamicRef;
                 }
 
@@ -347,18 +274,21 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                   ? checkCustomAlerts(value, refColumn, col)
                   : { isHigh: false, isLow: false }
 
+                // ── NUEVO RENDERIZADO CON SOPORTE PARA SALTO DE LÍNEA VERTICAL ──
                 return (
-                  <Text
-                    key={col.id}
-                    style={[
-                      isResultColumn ? s.tableCellBold : s.tableCell,
-                      { flex, fontSize: 8.5 },
-                      col.isHeaderOnly ? { fontFamily: "Helvetica-Bold" } : {},
-                      isHigh ? s.flagHigh : isLow ? s.flagLow : {}
-                    ]}
-                  >
-                    {value || "—"} {isHigh ? "↑" : isLow ? "↓" : ""}
-                  </Text>
+                  <View key={col.id} style={[{ flex }, col.isHeaderOnly ? { fontFamily: "Helvetica-Bold" } : {}]}>
+                    {Array.isArray(value) ? (
+                      value.map((line, lineIdx) => (
+                        <Text key={lineIdx} style={[s.tableCell, { fontSize: 7.5, marginBottom: 1, color: "#475569" }]}>
+                          {line}
+                        </Text>
+                      ))
+                    ) : (
+                      <Text style={[isResultColumn ? s.tableCellBold : s.tableCell, { fontSize: 8.5 }, isHigh ? s.flagHigh : isLow ? s.flagLow : {}]}>
+                        {`${value || "—"}${isHigh ? " ↑" : isLow ? " ↓" : ""}`}
+                      </Text>
+                    )}
+                  </View>
                 )
               })}
             </View>
@@ -369,4 +299,4 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       })}
     </View>
   )
-}
+}   
