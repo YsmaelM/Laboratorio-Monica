@@ -1,7 +1,14 @@
 {
     "cleanUrls": true,
-    "caseSensitive": false,
     "rewrites": [
+        {
+            "source": "/newOrder",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/neworder",
+            "destination": "/index.html"
+        },
         {
             "source": "/(.*)",
             "destination": "/index.html"
