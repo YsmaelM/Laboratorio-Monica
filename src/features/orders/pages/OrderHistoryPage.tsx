@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore"
 import { ref, deleteObject } from "firebase/storage"
 import { db, storage } from "@/shared/lib/firebase"
@@ -165,13 +166,13 @@ export default function OrderHistoryPage() {
                         ) : (
                           <span className="text-xs text-white/30 px-2 py-1.5">Sin PDF</span>
                         )}
-                        <a
-                          href={`/newOrder?edit=${order.id}`}
+                        <Link
+                          to={`/newOrder?edit=${order.id}`}
                           className="inline-flex items-center justify-center rounded-lg bg-white/5 p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white"
                           title="Editar orden"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                        </a>
+                        </Link>
                         <button
                           onClick={() => setOrderToDelete(order.id)}
                           className="inline-flex items-center justify-center rounded-lg bg-red-500/10 p-1.5 text-red-400 transition hover:bg-red-500/20"
