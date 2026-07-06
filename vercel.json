@@ -2,15 +2,7 @@
     "cleanUrls": true,
     "rewrites": [
         {
-            "source": "/newOrder",
-            "destination": "/index.html"
-        },
-        {
-            "source": "/neworder",
-            "destination": "/index.html"
-        },
-        {
-            "source": "/(.*)",
+            "source": "/((?!assets/|.*\\..*$).*)",
             "destination": "/index.html"
         }
     ]

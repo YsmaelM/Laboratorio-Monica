@@ -40,7 +40,7 @@ export const s = StyleSheet.create({
     fontSize: 9,
     color: COLORS.text,
     paddingTop: 135,
-    paddingBottom: 70,
+    paddingBottom: 115,
     paddingHorizontal: 40,
   },
 
