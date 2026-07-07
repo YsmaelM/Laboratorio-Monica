@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom"
 import { useAuth } from "@/app/providers/AuthProvider"
 import MainLayout from "@/shared/components/layout/MainLayout"
 import { Loader2 } from "lucide-react"
+import NotFound from "@/app/NotFound"
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"))
@@ -49,7 +50,7 @@ export default function AppRoutes() {
                   <Route path="catalog" element={<CatalogManagementPage />} />
                   <Route path="settings" element={<LabSettingsPage />} />
                   <Route path="patiens" element={<PatiensListPage />} />
-                  <Route path="*" element={<Navigate to="newOrder" replace />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </MainLayout>
             </PrivateRoute>
