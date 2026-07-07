@@ -1,9 +1,12 @@
 import type { CustomTestEntry, FormatColumn } from "@/shared/types"
+import { useEffect, useRef } from "react"
+
 
 interface CustomTestFormProps {
   entry: CustomTestEntry
   onChange: (updated: CustomTestEntry) => void
   patient?: any
+  onNext?: () => void
 }
 
 const inputBase =
@@ -132,6 +135,8 @@ function CellInput({
   refColumn,
   patient,
   isFirst,
+  inputsRefMap,
+  onKeyDown,
 }: {
   col: FormatColumn
   rowId: string
@@ -140,8 +145,10 @@ function CellInput({
   refColumn?: FormatColumn
   patient?: any
   isFirst?: boolean
+  inputsRefMap: React.MutableRefObject<Map<string, HTMLInputElement | HTMLSelectElement | null>>
+  onKeyDown: (e: React.KeyboardEvent, currentKey: string) => void
 }) {
-  const fieldKey = `${rowId}_${col.id}`
+  const fieldKey = `${rowId}|${col.id}`
 
   // ── 1. AGREGAMOS EL COMPORTAMIENTO RENDER DE LA FÓRMULA AUTOMÁTICA ──
   if (col.type === "formula") {
@@ -155,6 +162,8 @@ function CellInput({
   if (col.type === "select") {
     return (
       <select
+        ref={(el) => { inputsRefMap.current.set(fieldKey, el) }}
+        onKeyDown={(e) => onKeyDown(e, fieldKey)}
         value={value}
         onChange={(e) => onChange(fieldKey, e.target.value)}
         className={`${inputBase} border-white/10 bg-white/5 focus:border-primary-500 focus:ring-primary-500`}
@@ -214,6 +223,8 @@ function CellInput({
 
     return (
       <input
+        ref={(el) => { inputsRefMap.current.set(fieldKey, el) }}
+        onKeyDown={(e) => onKeyDown(e, fieldKey)}
         type="number"
         value={value}
         onChange={(e) => onChange(fieldKey, e.target.value)}
@@ -230,6 +241,8 @@ function CellInput({
 
   return (
     <input
+      ref={(el) => { inputsRefMap.current.set(fieldKey, el) }}
+      onKeyDown={(e) => onKeyDown(e, fieldKey)}
       type="text"
       value={displayValue}
       onChange={(e) => onChange(fieldKey, e.target.value)}
@@ -243,8 +256,70 @@ function CellInput({
   )
 }
 
-export default function CustomTestForm({ entry, onChange, patient }: CustomTestFormProps) {
-  const { customTemplate, data } = entry
+export default function CustomTestForm({ entry, onChange, patient, onNext }: CustomTestFormProps) {
+  const { catalogId, customTemplate, data } = entry
+
+  // ── INICIO DE CÓDIGO NUEVO PARA EL FOCO ──
+  const editableInputsOrder: string[] = []
+  const inputsRefMap = useRef<Map<string, HTMLInputElement | HTMLSelectElement | null>>(new Map())
+
+  if (customTemplate?.rows) {
+    customTemplate.rows.forEach((row: any) => {
+      if (row.columns && (row.type === "test" || row.type === "simple")) {
+        row.columns.forEach((col: any) => {
+          // Filtramos exactamente igual que en tu JSX (Evitamos fijos, fórmulas o encabezados)
+          if (
+            !col.isHeaderOnly &&
+            !col.isFixed &&
+            col.type !== "formula" &&
+            col.type !== "reference" &&
+            col.type !== "unit"
+          ) {
+            editableInputsOrder.push(`${row.id}|${col.id}`)
+          }
+        })
+      }
+    })
+  }
+
+  useEffect(() => {
+    if (editableInputsOrder.length > 0) {
+      const firstInputKey = editableInputsOrder[0]
+      const timer = setTimeout(() => {
+        const el = inputsRefMap.current.get(firstInputKey)
+        if (el) {
+          el.focus()
+          if ('select' in el) el.select()
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [catalogId])
+
+  const handleKeyDown = (e: React.KeyboardEvent, currentKey: string) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      const currentIndex = editableInputsOrder.indexOf(currentKey)
+
+      if (currentIndex !== -1 && currentIndex < editableInputsOrder.length - 1) {
+        const nextInputKey = editableInputsOrder[currentIndex + 1]
+
+        // Un micro setTimeout asegura que React termine de procesar el render antes de mover el cursor
+        setTimeout(() => {
+          const nextEl = inputsRefMap.current?.get(nextInputKey)
+          console.log({ currentKey, nextInputKey, nextEl, totalOrder: editableInputsOrder })
+
+          if (nextEl) {
+            nextEl.focus()
+            if ('select' in nextEl) nextEl.select()
+          }
+        }, 10)
+      } else {
+        if (onNext) onNext()
+      }
+    }
+  }
+  // ── FIN DE CÓDIGO NUEVO PARA EL FOCO ──
 
   const updateField = (key: string, value: string) => {
     onChange({
@@ -282,7 +357,7 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
               style={{ gridTemplateColumns: row.columns.map((c) => `${c.width ?? 1}fr`).join(" ") }}
             >
               {row.columns.map((col) => {
-                const fieldKey = `${row.id}_${col.id}`;
+                const fieldKey = `${row.id}|${col.id}`
 
                 const cellDefault = col.type === "reference" || Array.isArray(col.groups)
                   ? getFormRefText(col, patient)
@@ -316,6 +391,8 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
                             refColumn={refColumn}
                             patient={patient}
                             isFirst={shouldFocus} // ← Pasamos la propiedad de enfoque
+                            inputsRefMap={inputsRefMap}
+                            onKeyDown={handleKeyDown}
                           />
                         );
                       })()
@@ -340,7 +417,7 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
               style={{ gridTemplateColumns: row.columns.map((c) => `${c.width ?? 1}fr`).join(" ") }}
             >
               {row.columns.map((col) => {
-                const fieldKey = `${row.id}_${col.id}`
+                const fieldKey = `${row.id}|${col.id}`
 
                 const cellDefault = col.type === "reference" || Array.isArray(col.groups)
                   ? getFormRefText(col, patient)
@@ -375,6 +452,8 @@ export default function CustomTestForm({ entry, onChange, patient }: CustomTestF
                             refColumn={refColumn}
                             patient={patient}
                             isFirst={shouldFocus} // ← Pasamos la propiedad de enfoque
+                            inputsRefMap={inputsRefMap}
+                            onKeyDown={handleKeyDown}
                           />
                         );
                       })()

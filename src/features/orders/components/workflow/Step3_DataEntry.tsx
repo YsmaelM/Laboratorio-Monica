@@ -42,6 +42,15 @@ export default function Step3DataEntry({
     }
   }
 
+  const handleNextTest = (currentIdx: number) => {
+    if (currentIdx < tests.length - 1) {
+      setExpandedIdx(currentIdx + 1) // Cierra el actual y expande el de la siguiente prueba
+    } else {
+      // Opcional: Si ya terminó la última prueba, podemos cerrar el acordeón actual
+      setExpandedIdx(-1)
+    }
+  }
+
   return (
     <div className="animate-slide-up">
       <div className="mb-6">
@@ -64,6 +73,15 @@ export default function Step3DataEntry({
         />
       </div>
 
+      <div className="mb-6 rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-4">
+        <p className="text-sm font-medium text-emerald-400 mb-1">Instrucciones de llenado:</p>
+        <p className="text-xs text-white/60 leading-relaxed">
+          Completa los campos requeridos de cada examen. Puedes agilizar la transcripción presionando la tecla{" "}
+          <span className="font-semibold text-emerald-300">"Enter"</span> para saltar automáticamente al siguiente input.
+        </p>
+      </div>
+
+
       {/* Accordion of test entry forms */}
       <div className="space-y-3">
         {tests.map((testEntry, idx) => {
@@ -82,8 +100,8 @@ export default function Step3DataEntry({
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isEntered
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "bg-white/10 text-white/50"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-white/10 text-white/50"
                     }`}>
                     {isEntered ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
                   </div>
@@ -106,6 +124,7 @@ export default function Step3DataEntry({
                     entry={testEntry}
                     onChange={(updated) => handleEntryChange(idx, updated)}
                     patient={patient}
+                    onNext={() => handleNextTest(idx)}
                   />
                 </div>
               )}
