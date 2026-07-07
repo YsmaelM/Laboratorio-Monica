@@ -78,12 +78,6 @@ export default function SimpleTestForm({ entry, onChange }: SimpleTestFormProps)
     <div className="space-y-4">
 
 
-      {/* 
-  script para ver cuales son los valores que llegan y se cargan: 
-<pre className="text-xs text-green-400 bg-black p-2 rounded">
-        {JSON.stringify(data, null, 2)}
-      </pre> */}
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Result */}
         <div>
