@@ -95,11 +95,13 @@ export default function Step2TestSelection({
           <TestCombobox catalog={catalog} onSelect={handleSelect} />
         </div>
 
+
         {/* Right Column: Selected Tests */}
         <div>
           <SelectedTestsList selectedTests={selectedTests} onRemove={handleRemove} />
         </div>
       </div>
+
 
       <div className="mt-8 flex justify-between border-t border-white/10 pt-6">
         <button

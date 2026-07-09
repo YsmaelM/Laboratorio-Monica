@@ -61,7 +61,7 @@ const evaluateFormula = (
       const targetColId = match[1] // Corregido: Extrae el ID limpio sin las llaves {}
 
       // 1. Intentar buscar primero en la fila actual
-      let fieldKey = `${currentRowId}_${targetColId}`
+      let fieldKey = `${currentRowId}|${targetColId}`
       let rawValue = data[fieldKey]
 
       // 2. RADAR MULTI-FILA MEJORADO
@@ -77,7 +77,7 @@ const evaluateFormula = (
               if (foundCol.type === "formula") {
                 rawValue = evaluateFormula(foundCol.formulaExpression, row.id, data, customTemplate)
               } else {
-                fieldKey = `${row.id}_${targetColId}`
+                fieldKey = `${row.id}|${targetColId}`
                 rawValue = data[fieldKey]
               }
               break
@@ -150,10 +150,39 @@ function CellInput({
 }) {
   const fieldKey = `${rowId}|${col.id}`
 
-  // ── 1. AGREGAMOS EL COMPORTAMIENTO RENDER DE LA FÓRMULA AUTOMÁTICA ──
+  // ── 1. RENDER DE FÓRMULA CON ALERTA DE COLOR ──
   if (col.type === "formula") {
+    // Evaluamos si el resultado de la fórmula está fuera del rango de referencia
+    let formulaAlertClass = "border-primary-500/20 bg-primary-500/5 text-primary-400"
+    if (value && value !== "—" && !isNaN(Number(value)) && refColumn) {
+      const numValue = Number(value)
+      let targetMin = refColumn.min
+      let targetMax = refColumn.max
+
+      if (Array.isArray(refColumn.groups) && patient) {
+        const pAge = patient.age ?? 0
+        const matchedGroup = refColumn.groups.find((g: any) => {
+          const minA = g.minAge !== undefined ? g.minAge : 0
+          const maxA = g.maxAge !== undefined ? g.maxAge : 120
+          return pAge >= minA && pAge < maxA
+        })
+        if (matchedGroup) {
+          targetMin = matchedGroup.min
+          targetMax = matchedGroup.max
+        }
+      }
+
+      if (targetMin !== undefined && numValue < targetMin) {
+        formulaAlertClass = "border-amber-500/50 bg-amber-500/5 text-amber-300"
+      } else if (targetMax !== undefined && numValue > targetMax) {
+        formulaAlertClass = "border-red-500/50 bg-red-500/5 text-red-300"
+      } else if (targetMin !== undefined || targetMax !== undefined) {
+        formulaAlertClass = "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
+      }
+    }
+
     return (
-      <div className="flex h-9 items-center px-3 rounded-xl border border-primary-500/20 bg-primary-500/5 text-sm font-bold text-primary-400">
+      <div className={`flex h-9 items-center px-3 rounded-xl border text-sm font-bold ${formulaAlertClass}`}>
         {value || "—"}
       </div>
     )

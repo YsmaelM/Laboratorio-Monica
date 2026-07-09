@@ -36,7 +36,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       const replacements: Array<{ token: string; value: string }> = []
       while ((match = tokenRegex.exec(formulaExpression)) !== null) {
         const targetColId = match[1]
-        let fieldKey = `${rowId}_${targetColId}`
+        let fieldKey = `${rowId}|${targetColId}`
         let rawValue = data[fieldKey]
         if ((rawValue === undefined || rawValue === "") && customTemplate?.rows) {
           for (const row of customTemplate.rows) {
@@ -46,7 +46,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
                 if (foundCol.type === "formula") {
                   rawValue = evaluateFormula(foundCol.formulaExpression, row.id, data, customTemplate)
                 } else {
-                  fieldKey = `${row.id}_${targetColId}`
+                  fieldKey = `${row.id}|${targetColId}`
                   rawValue = data[fieldKey]
                 }
                 break
@@ -194,7 +194,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
               <View style={s.tableRow}>
                 {row.columns.map((col) => {
                   const flex = (col.width ?? 1) / totalWeight
-                  const fieldKey = `${row.id}_${col.id}`
+                  const fieldKey = `${row.id}|${col.id}`
 
                   const dynamicRef = getRefColumnValue(col, refColumn)
                   let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")
@@ -257,7 +257,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
             >
               {row.columns.map((col) => {
                 const flex = (col.width ?? 1) / totalWeight
-                const fieldKey = `${row.id}_${col.id}`
+                const fieldKey = `${row.id}|${col.id}`
 
                 const dynamicRef = getRefColumnValue(col, refColumn)
                 let value = col.isHeaderOnly ? col.label : (data[fieldKey] ?? dynamicRef ?? "")

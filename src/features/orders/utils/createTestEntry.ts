@@ -37,7 +37,7 @@ export function createTestEntry(catalogItem: TestCatalogItem): TestEntry {
         if (row.type === "test" || row.type === "simple") {
           row.columns.forEach((col) => {
             if (col.defaultValue) {
-              initialData[`${row.id}_${col.id}`] = col.defaultValue
+              initialData[`${row.id}|${col.id}`] = col.defaultValue
             }
           })
         }

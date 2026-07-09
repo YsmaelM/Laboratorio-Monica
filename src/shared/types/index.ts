@@ -240,7 +240,7 @@ export interface CustomTestEntry extends TestEntryBase {
   format: "custom"
   customTemplate: CustomFormatTemplate
   data: {
-    // key: "<rowId>_<colId>" = valor ingresado por el usuario
+    // key: "<rowId>|<colId>" = valor ingresado por el usuario
     [fieldKey: string]: string
   }
 }
