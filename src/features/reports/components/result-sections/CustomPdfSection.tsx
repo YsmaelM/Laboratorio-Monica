@@ -190,27 +190,24 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
 
   return (
     <View style={{ marginBottom: 10 }}>
-      {/* Título del formato */}
-      {showTitle && (
-        <View style={{ marginBottom: 4 }}>
-          <Text style={s.sectionTitle}>{entry.testName}</Text>
-        </View>
-      )}
-
       {blocks.map((block, blockIdx) => {
         const testRow = block.testRow
         const totalWeight = testRow ? testRow.columns.reduce((acc: number, c: any) => acc + (c.width ?? 1), 0) : 1
         const refColumn = testRow ? testRow.columns.find((c: any) => c.type === "reference") : null
 
         return (
-          // Usamos wrap={false} para mantener cada sección/bloque como una unidad indivisible.
-          // Al usar anchos porcentuales fijos en las celdas en vez de flex, react-pdf calcula
-          // correctamente las alturas y evita al 100% el colapso de alto y solapamiento.
           <View
             key={`block-${blockIdx}`}
             wrap={false}
             style={{ marginBottom: 8 }}
           >
+            {/* Título del formato: DENTRO del primer bloque wrap={false} para que nunca quede huérfano */}
+            {showTitle && blockIdx === 0 && (
+              <View style={{ marginBottom: 4 }}>
+                <Text style={s.sectionTitle}>{entry.testName}</Text>
+              </View>
+            )}
+
             {/* Sub-encabezado de sección */}
             {block.sectionHeader && (
               <View style={{ marginTop: 6, marginBottom: 3 }}>

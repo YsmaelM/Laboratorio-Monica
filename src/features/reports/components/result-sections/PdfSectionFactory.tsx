@@ -11,26 +11,18 @@ interface PdfSectionFactoryProps {
 }
 
 export function PdfSectionFactory({ entry, patient }: PdfSectionFactoryProps) {
-  // Retornamos directamente un contenedor limpio para evitar colisiones en cascada de layouts en el PDF
-  return (
-    <View style={{ marginBottom: 12 }}>
-      {renderSection(entry, patient)}
-    </View>
-  )
-}
-
-function renderSection(entry: TestEntry, patient?: PatientSnapshot) {
   switch (entry.format) {
     case "simple":
+      // wrap={false} en el contenedor raíz: título + tabla siempre juntos
       return (
-        <View wrap={false}>
+        <View wrap={false} style={{ marginBottom: 6 }}>
           <Text style={[s.sectionTitle, { marginBottom: 4 }]}>{entry.testName}</Text>
           <SimplePdfSection entry={entry} />
         </View>
       )
     case "culture":
       return (
-        <View wrap={false}>
+        <View wrap={false} style={{ marginBottom: 6 }}>
           <Text style={[s.sectionTitle, { marginBottom: 4 }]}>{entry.testName}</Text>
           <CulturePdfSection entry={entry} />
         </View>
