@@ -10,7 +10,7 @@ interface GroupedSimplePdfSectionProps {
 export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSectionProps) {
   if (entries.length === 0) return null
 
-  // ── 1. MODIFICADO: SIEMPRE RETORNA EL DESGLOSE COMPLETO EN LISTA VERTICAL ──
+  // ── 1. SIEMPRE RETORNA EL DESGLOSE COMPLETO EN LISTA VERTICAL ──
   const getRefText = (refValue: any) => {
     if (!refValue) return "-"
     if (typeof refValue === "string") return refValue
@@ -18,8 +18,6 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
     const ref = refValue as ReferenceValue
 
     if (ref.type === "group" && Array.isArray(ref.groups)) {
-      // Eliminamos el buscador de grupo único para este texto visual.
-      // Ahora, siempre va a retornar la lista completa de renglones para que se listen hacia abajo:
       return ref.groups.map(g => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0}-${g.max ?? 0}` : g.type === "desde" ? `Mín: ${g.min ?? 0}` : g.max ?? 0}`);
     }
 
@@ -36,8 +34,11 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
     return "-"
   }
 
+  let simpleRowCount = 0
+
   return (
-    <View wrap={false} style={{ marginTop: 10 }}>
+    <View style={{ marginTop: 10 }}>
+      {/* Membrete inicial */}
       <View style={s.sectionHeader}>
         <Text style={s.sectionTitle}>Pruebas de laboratorio:</Text>
       </View>
@@ -50,6 +51,7 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
         <Text style={[s.tableHeaderText, { flex: 1.5 }]}>Método</Text>
       </View>
 
+      {/* Renderizado continuo que fluye y salta de página automáticamente */}
       {entries.map((entry, idx) => {
         const { data } = entry
 
@@ -59,9 +61,6 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
         let targetMin: number | undefined = undefined
         let targetMax: number | undefined = undefined
 
-        // ── 2. EL RADAR DE ALERTAS SE QUEDA ACTIVO EN SILENCIO ──
-        // Aunque imprimamos todo el desglose abajo, el motor sigue buscando el rango del paciente 
-        // para saber si debe pintar las flechas ↑ o ↓ de forma matemática
         if (data.refValue && typeof data.refValue !== "string") {
           const ref = data.refValue as ReferenceValue
 
@@ -109,9 +108,25 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
         }
 
         const refValueProcessed = getRefText(data.refValue)
+        const isOdd = simpleRowCount % 2 !== 0
+        simpleRowCount++
 
         return (
-          <View key={entry.catalogId || idx} style={s.tableRow}>
+          // wrap={false} individual para que cada fila no se divida por la mitad
+          <View
+            key={entry.catalogId || idx}
+            wrap={false}
+            style={[
+              s.tableRow,
+              {
+                backgroundColor: isOdd ? "#f8fafc" : "#ffffff",
+                paddingVertical: 5.5,
+                paddingHorizontal: 6,
+                borderBottomWidth: 0.5,
+                borderBottomColor: "#e2e8f0",
+              }
+            ]}
+          >
             <Text style={[s.tableCell, { flex: 2 }]}>{entry.testName}</Text>
 
             <Text style={[s.tableCellBold, { flex: 1 }, isHigh ? s.flagHigh : isLow ? s.flagLow : {}]}>
@@ -120,7 +135,7 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
 
             <Text style={[s.tableCell, { flex: 1 }]}>{data.unit}</Text>
 
-            {/* ── 3. RENDERIZADO VERTICAL DE CELDAS CON SALTO DE LÍNEA ── */}
+            {/* RENDERIZADO VERTICAL DE CELDAS CON SALTO DE LÍNEA */}
             <View style={{ flex: 2 }}>
               {Array.isArray(refValueProcessed) ? (
                 refValueProcessed.map((line, lineIdx) => (

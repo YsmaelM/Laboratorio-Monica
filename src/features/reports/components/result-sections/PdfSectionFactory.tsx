@@ -13,7 +13,7 @@ interface PdfSectionFactoryProps {
 export function PdfSectionFactory({ entry, patient }: PdfSectionFactoryProps) {
   // Retornamos directamente un contenedor limpio para evitar colisiones en cascada de layouts en el PDF
   return (
-    <View style={{ marginBottom: 15 }} wrap={false}>
+    <View style={{ marginBottom: 12 }}>
       {renderSection(entry, patient)}
     </View>
   )
@@ -23,28 +23,22 @@ function renderSection(entry: TestEntry, patient?: PatientSnapshot) {
   switch (entry.format) {
     case "simple":
       return (
-        <View>
+        <View wrap={false}>
           <Text style={[s.sectionTitle, { marginBottom: 4 }]}>{entry.testName}</Text>
           <SimplePdfSection entry={entry} />
         </View>
       )
     case "culture":
       return (
-        <View>
+        <View wrap={false}>
           <Text style={[s.sectionTitle, { marginBottom: 4 }]}>{entry.testName}</Text>
           <CulturePdfSection entry={entry} />
         </View>
       )
     case "custom":
-      return (
-        <View>
-          {/* El título principal se maneja como View aislado para que no bloquee las tablas dinámicas */}
-          <View style={{ marginBottom: 4 }}>
-            <Text style={s.sectionTitle}>{entry.testName}</Text>
-          </View>
-          <CustomPdfSection entry={entry} patient={patient} />
-        </View>
-      )
+      // El título se pasa a CustomPdfSection para que quede dentro del mismo
+      // contenedor wrap={false} junto con sus filas de datos.
+      return <CustomPdfSection entry={entry} patient={patient} showTitle />
     default:
       return <Text style={s.tableCell}>Formato desconocido</Text>
   }
