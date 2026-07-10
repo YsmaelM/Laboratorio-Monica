@@ -226,7 +226,9 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
                         ? `${newValue.min ?? 0} - ${newValue.max ?? 0}`
                         : newValue.type === "single_point"
                           ? `Hasta ${newValue.max ?? 0}`
-                          : "Ver desglose por grupos" // Texto descriptivo si es hormonal/grupal
+                          : newValue.type === "desde"
+                            ? `Desde ${newValue.min ?? 0}`
+                            : "Ver desglose por grupos" // Texto descriptivo si es hormonal/grupal
                     })
                   }}
                 />

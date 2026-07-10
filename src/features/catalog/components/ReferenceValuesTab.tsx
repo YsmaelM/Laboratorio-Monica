@@ -52,6 +52,10 @@ export default function ReferenceValuesTab({ onEdit }: ReferenceValuesTabProps) 
       return <span>Hasta: <strong className="text-primary-400">{ref.max}</strong></span>
     }
 
+    if (ref.type === "desde") {
+      return <span>Desde: <strong className="text-primary-400">{ref.min}</strong></span>
+    }
+
     if (ref.type === "two_point") {
       return (
         <span>
@@ -68,6 +72,8 @@ export default function ReferenceValuesTab({ onEdit }: ReferenceValuesTabProps) 
               <span className="text-white/60 mr-1">{g.name}:</span>
               {g.type === "two_point" ? (
                 <strong className="text-primary-400">{g.min} - {g.max}</strong>
+              ) : g.type === "desde" ? (
+                <span>Desde <strong className="text-primary-400">{g.min}</strong></span>
               ) : (
                 <span>Hasta <strong className="text-primary-400">{g.max}</strong></span>
               )}

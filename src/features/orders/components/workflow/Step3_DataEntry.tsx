@@ -13,6 +13,49 @@ interface Step3DataEntryProps {
   onOrderSaved: (orderId: string) => void
 }
 
+export function isTestEntryFilled(test: TestEntry): boolean {
+  if (test.format === "simple") {
+    const val = test.data?.result
+    return val !== undefined && val !== null && String(val).trim() !== ""
+  }
+  if (test.format === "culture") {
+    const sampleEmpty = !test.data?.sampleType || String(test.data.sampleType).trim() === ""
+    const resultEmpty = !test.data?.cultureResult || String(test.data.cultureResult).trim() === ""
+    return !sampleEmpty && !resultEmpty
+  }
+  if (test.format === "custom") {
+    const template = (test as any).customTemplate
+    if (!template?.rows) return false
+    let hasInputs = false
+    let hasEmpty = false
+    template.rows.forEach((row: any) => {
+      if (row.columns && (row.type === "test" || row.type === "simple")) {
+        row.columns.forEach((col: any) => {
+          if (
+            !col.isHeaderOnly &&
+            !col.isFixed &&
+            col.type !== "formula" &&
+            col.type !== "reference" &&
+            col.type !== "unit"
+          ) {
+            hasInputs = true
+            const val = test.data[`${row.id}|${col.id}`]
+            if (val === undefined || val === null || String(val).trim() === "") {
+              hasEmpty = true
+            }
+          }
+        })
+      }
+    })
+    return hasInputs ? !hasEmpty : false
+  }
+  return false
+}
+
+export function checkIfHasEmptyResults(tests: TestEntry[]): boolean {
+  return tests.some((test) => !isTestEntryFilled(test))
+}
+
 export default function Step3DataEntry({
   patient,
   tests,
@@ -24,6 +67,7 @@ export default function Step3DataEntry({
   const { saveOrder, loading, error } = useOrderMutation()
   const [expandedIdx, setExpandedIdx] = useState<number>(0)
   const [referringDoctor, setReferringDoctor] = useState("")
+  const [showWarningModal, setShowWarningModal] = useState(false)
 
   const handleEntryChange = (idx: number, updated: TestEntry) => {
     const newTests = [...tests]
@@ -36,6 +80,14 @@ export default function Step3DataEntry({
   }
 
   const handleSave = async () => {
+    if (checkIfHasEmptyResults(tests)) {
+      setShowWarningModal(true)
+    } else {
+      executeSave()
+    }
+  }
+
+  const executeSave = async () => {
     const savedId = await saveOrder(patient, tests, referringDoctor, orderId || undefined)
     if (savedId) {
       onOrderSaved(savedId)
@@ -86,7 +138,7 @@ export default function Step3DataEntry({
       <div className="space-y-3">
         {tests.map((testEntry, idx) => {
           const isExpanded = expandedIdx === idx
-          const isEntered = testEntry.status === "entered" || testEntry.status === "validated"
+          const isEntered = isTestEntryFilled(testEntry) || testEntry.status === "validated"
 
           return (
             <div
@@ -158,6 +210,40 @@ export default function Step3DataEntry({
           {loading ? "Guardando Orden..." : "Guardar Orden"}
         </button>
       </div>
+
+      {/* Warning Modal for Empty Results */}
+      {showWarningModal && (
+        // Se cambió "items-center" por "items-end" y se agregó "pb-8" para darle un margen interno inferior
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm p-4 pb-[35vh]">
+          {/* Se cambió "animate-scale-in" por "animate-slide-up" si deseas una animación más natural desde abajo */}
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-900 p-6 shadow-2xl animate-slide-up">
+            <h3 className="text-lg font-semibold text-white mb-2">Campos Vacíos Detectados</h3>
+            <p className="text-sm text-white/60 mb-6 leading-relaxed">
+              Hay campos de resultados vacíos en una o más pruebas. ¿Deseas guardar la orden de todas formas? Puedes completarlos más tarde.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                disabled={loading}
+                onClick={() => setShowWarningModal(false)}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition disabled:opacity-50"
+              >
+                Volver a revisar
+              </button>
+              <button
+                disabled={loading}
+                onClick={() => {
+                  setShowWarningModal(false)
+                  executeSave()
+                }}
+                className="rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg transition hover:bg-amber-500 disabled:opacity-50"
+              >
+                Sí, guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

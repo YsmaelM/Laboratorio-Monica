@@ -57,14 +57,14 @@ export interface RefRange {
   child?: { min: number; max: number }
 }
 export interface ReferenceValue {
-  type: "single_point" | "two_point" | "group" | "sinRef"
+  type: "single_point" | "two_point" | "group" | "sinRef" | "desde"
   min?: number
   max?: number
   groups?: {
     name: string
-    type: "single_point" | "two_point"
+    type: "single_point" | "two_point" | "desde"
     min?: number
-    max: number
+    max?: number
     minAge?: number
     maxAge?: number
   }[]
@@ -110,14 +110,14 @@ export interface FormatColumn {
   isFixed?: boolean                           // Si es un valor fijo (no editable)
   isHeaderOnly?: boolean                       // Si es solo cabecera/membrete (sin valor)
   formulaExpression?: string
-  refType?: "single_point" | "two_point" | "group" | "sinRef" // Tipo interno del rango
+  refType?: "single_point" | "two_point" | "group" | "sinRef" | "desde" // Tipo interno del rango
   min?: number
   max?: number
   groups?: {                               // Arreglo para grupos en columnas custom
     name: string
-    type: "single_point" | "two_point"
+    type: "single_point" | "two_point" | "desde"
     min?: number
-    max: number
+    max?: number
   }[]
 }
 

@@ -9,11 +9,16 @@ interface ReferenceValuesEditorProps {
 export default function ReferenceValuesEditor({ value, onChange }: ReferenceValuesEditorProps) {
   const currentType = value?.type || "two_point"
 
-  const handleTypeChange = (type: "single_point" | "two_point" | "group" | "sinRef") => {
+  const handleTypeChange = (type: "single_point" | "two_point" | "group" | "sinRef" | "desde") => {
     if (type === "single_point") {
       onChange({
         type,
         max: value?.max || 0,
+      })
+    } else if (type === "desde") {
+      onChange({
+        type,
+        min: value?.min || 0,
       })
     } else if (type === "two_point") {
       onChange({
@@ -92,6 +97,7 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
         >
           <option value="sinRef">Sin Val. Ref.</option>
           <option value="single_point">Un Punto (Ej: Hasta 5)</option>
+          <option value="desde">Desde (Ej: Desde 5)</option>
           <option value="two_point">Dos Puntos (Ej: Desde 2 Hasta 5)</option>
           <option value="group">Por Grupo (Ej: Adultos, Niños, Hombres, Mujeres)</option>
         </select>
@@ -111,6 +117,20 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
             step="any"
             value={value?.max ?? ""}
             onChange={(e) => handleFieldChange("max", e.target.value === "" ? 0 : Number(e.target.value))}
+            className="w-full rounded-xl border border-white/10 bg-surface-900 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            placeholder="Ej. 5"
+          />
+        </div>
+      )}
+
+      {currentType === "desde" && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-white/80">Desde *</label>
+          <input
+            type="number"
+            step="any"
+            value={value?.min ?? ""}
+            onChange={(e) => handleFieldChange("min", e.target.value === "" ? 0 : Number(e.target.value))}
             className="w-full rounded-xl border border-white/10 bg-surface-900 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             placeholder="Ej. 5"
           />
@@ -200,7 +220,8 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
                     onChange={(e) => handleGroupChange(index, "type", e.target.value)}
                     className="w-full rounded-lg border border-white/10 bg-surface-900 px-2 py-1.5 text-xs text-white"
                   >
-                    <option value="single_point">Un Punto</option>
+                    <option value="single_point">Un Punto (Hasta)</option>
+                    <option value="desde">Desde</option>
                     <option value="two_point">Dos Puntos</option>
                   </select>
                 </div>
@@ -230,6 +251,18 @@ export default function ReferenceValuesEditor({ value, onChange }: ReferenceValu
                       />
                     </div>
                   </>
+                ) : group.type === "desde" ? (
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-xs text-white/60">Desde</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={group.min ?? ""}
+                      onChange={(e) => handleGroupChange(index, "min", e.target.value === "" ? 0 : Number(e.target.value))}
+                      className="w-full rounded-lg border border-white/10 bg-surface-900 px-2 py-1 text-xs text-white"
+                      placeholder="Min"
+                    />
+                  </div>
                 ) : (
                   <div className="sm:col-span-2">
                     <label className="mb-1 block text-xs text-white/60">Hasta</label>

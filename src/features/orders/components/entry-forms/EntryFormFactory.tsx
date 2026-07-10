@@ -13,7 +13,7 @@ interface EntryFormFactoryProps {
 export default function EntryFormFactory({ entry, onChange, patient, onNext }: EntryFormFactoryProps) {
   switch (entry.format) {
     case "simple":
-      return <SimpleTestForm entry={entry} onChange={onChange} onNext={onNext} />
+      return <SimpleTestForm entry={entry} onChange={onChange} patient={patient} onNext={onNext} />
     case "culture":
       return <CultureForm entry={entry} onChange={onChange} />
     case "custom":

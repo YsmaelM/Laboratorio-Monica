@@ -20,7 +20,11 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
     if (ref.type === "group" && Array.isArray(ref.groups)) {
       // Eliminamos el buscador de grupo único para este texto visual.
       // Ahora, siempre va a retornar la lista completa de renglones para que se listen hacia abajo:
-      return ref.groups.map(g => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0}-${g.max ?? 0}` : g.max ?? 0}`);
+      return ref.groups.map(g => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0}-${g.max ?? 0}` : g.type === "desde" ? `Mín: ${g.min ?? 0}` : g.max ?? 0}`);
+    }
+
+    if (ref.type === "desde" || (ref.min !== undefined && ref.max === undefined)) {
+      return `Mín: ${ref.min}`
     }
 
     if (ref.type === "two_point" || (ref.min !== undefined && ref.max !== undefined)) {
@@ -96,6 +100,8 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
             if (targetMin !== undefined && targetMax !== undefined) {
               if (val < targetMin) isLow = true
               if (val > targetMax) isHigh = true
+            } else if (targetMin !== undefined) {
+              if (val < targetMin) isLow = true
             } else if (targetMax !== undefined) {
               if (val > targetMax) isHigh = true
             }

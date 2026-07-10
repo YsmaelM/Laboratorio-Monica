@@ -86,7 +86,7 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
       // ── CAMBIO CLAVE: Eliminamos el buscador de grupo único para el texto visual.
       // Retornamos directamente el array mapeado completo para que el renderizador lo apile hacia abajo.
       return activeGroups.map(
-        (g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0} - ${g.max ?? 0}` : `Hasta ${g.max ?? 0}`}`
+        (g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0} - ${g.max ?? 0}` : g.type === "desde" ? `Desde ${g.min ?? 0}` : `Hasta ${g.max ?? 0}`}`
       );
     }
 
@@ -95,6 +95,9 @@ export function CustomPdfSection({ entry, patient }: CustomPdfSectionProps) {
     if (typeof dValue === "string" && (dValue.toLowerCase().includes("desglose") || dValue.toLowerCase().includes("grupo"))) {
       if (refColumn && refColumn.min !== undefined && refColumn.max !== undefined) {
         return `${refColumn.min} - ${refColumn.max}`;
+      }
+      if (refColumn && refColumn.min !== undefined && refColumn.max === undefined) {
+        return `Desde ${refColumn.min}`;
       }
       if (refColumn && refColumn.max !== undefined) {
         return `Hasta ${refColumn.max}`;
