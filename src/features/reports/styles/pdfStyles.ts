@@ -39,8 +39,8 @@ export const s = StyleSheet.create({
     fontFamily: "Inter",
     fontSize: 9,
     color: COLORS.text,
-    paddingTop: 165,
-    paddingBottom: 120,
+    paddingTop: 150,
+    paddingBottom: 100,
     paddingHorizontal: 40,
   },
 
