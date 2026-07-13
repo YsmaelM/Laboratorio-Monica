@@ -15,7 +15,7 @@ export function PdfSectionFactory({ entry, patient }: PdfSectionFactoryProps) {
     case "simple":
       // wrap={false} en el contenedor raíz: título + tabla siempre juntos
       return (
-        <View wrap={false} style={{ marginBottom: 6 }}>
+        <View wrap={false} style={{ marginBottom: 4 }}>
           <Text style={[s.sectionTitle, { marginBottom: 4 }]}>{entry.testName}</Text>
           <SimplePdfSection entry={entry} />
         </View>

@@ -34,9 +34,7 @@ export default function Sidebar() {
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-white/8 bg-surface-900">
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-accent-500 shadow-glow-primary">
-          <FlaskConical className="h-5 w-5 text-white" strokeWidth={1.5} />
-        </div>
+        <img src="public\favicon.svg" alt="LabSys" className="h-10 w-10" />
         <span className="text-base font-bold tracking-tight text-white">{APP_NAME}</span>
       </div>
 

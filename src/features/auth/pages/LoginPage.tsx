@@ -6,10 +6,10 @@ import { FlaskConical, Lock, Mail, AlertCircle, Loader2 } from "lucide-react"
 export default function LoginPage() {
   const { signIn, user } = useAuth()
   const navigate = useNavigate()
-  const [email,    setEmail]    = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error,    setError]    = useState<string | null>(null)
-  const [loading,  setLoading]  = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -45,7 +45,7 @@ export default function LoginPage() {
           {/* Logo / Header */}
           <div className="mb-8 flex flex-col items-center gap-3">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-600 to-accent-500 shadow-glow-primary">
-              <FlaskConical className="h-8 w-8 text-white" strokeWidth={1.5} />
+              <img src="public\favicon.svg" alt="LabSys" className="h-10 w-10" />
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-bold tracking-tight text-white">LabSys</h1>

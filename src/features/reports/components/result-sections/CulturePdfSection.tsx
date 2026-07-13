@@ -11,6 +11,7 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
 
   const isPositive = data.cultureResult === "Positive" || data.cultureResult === "Positivo"
 
+
   const textToPrint = data.cultureResultNotes === "custom_response"
     ? data.customNegativeText
     : data.cultureResultNotes;
@@ -37,7 +38,7 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
         )}
 
         <View style={{ flex: 1 }}>
-          <Text style={s.subSectionTitle}>Resultado de Cultivo</Text>
+          <Text style={s.subSectionTitle}>Resultado:</Text>
           <Text style={[s.tableCellBold, isPositive ? s.flagHigh : { color: "#10b981" }]}>
             {data.cultureResult}
           </Text>
@@ -91,8 +92,8 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
         </View>
       ) : (
         /* Caso B: Detalles de Cultivo Negativo */
-        <View wrap={false} style={{ marginTop: 4, padding: 6, backgroundColor: "#1e293b", borderRadius: 8 }}>
-          <Text style={s.subSectionTitle}>Observaciones del Cultivo:</Text>
+        <View wrap={false} style={{ marginTop: 4, padding: 6, backgroundColor: "#f3f8ffff", borderRadius: 8 }}>
+          <Text style={s.subSectionTitle}>Resultado del Cultivo:</Text>
           <Text style={[s.tableCell, { marginTop: 2, lineHeight: 1.3 }]}>
             {textToPrint || "No se observó desarrollo bacteriano."}
           </Text>

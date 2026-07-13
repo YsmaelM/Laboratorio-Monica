@@ -189,7 +189,7 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
   }
 
   return (
-    <View style={{ marginBottom: 10 }}>
+    <View style={{ marginBottom: 8 }}>
       {blocks.map((block, blockIdx) => {
         const testRow = block.testRow
         const totalWeight = testRow ? testRow.columns.reduce((acc: number, c: any) => acc + (c.width ?? 1), 0) : 1

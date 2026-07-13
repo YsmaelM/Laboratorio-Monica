@@ -105,7 +105,7 @@ export const s = StyleSheet.create({
     fontSize: 11,
     fontWeight: 700,
     color: COLORS.primary,
-    marginTop: 20,
+    marginTop: 15,
     marginBottom: 4,
     paddingBottom: 3,
     borderBottomWidth: 1,
