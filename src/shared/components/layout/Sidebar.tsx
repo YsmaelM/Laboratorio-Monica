@@ -33,7 +33,7 @@ export default function Sidebar() {
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-white/8 bg-surface-900">
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-6">
-        <img src="public\favicon.svg" alt="LabSys" className="h-10 w-10" />
+        <img src="/favicon.svg" alt="LabSys" className="h-10 w-10" />
         <span className="text-base font-bold tracking-tight text-white">{APP_NAME}</span>
       </div>
 
