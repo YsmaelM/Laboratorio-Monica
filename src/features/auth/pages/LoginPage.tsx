@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { useNavigate } from "react-router-dom"
-import { FlaskConical, Lock, Mail, AlertCircle, Loader2 } from "lucide-react"
+import { Lock, Mail, AlertCircle, Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const { signIn, user } = useAuth()

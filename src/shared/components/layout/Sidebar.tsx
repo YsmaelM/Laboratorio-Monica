@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "@/app/providers/AuthProvider"
 import {
-  FlaskConical,
   ClipboardList,
   History,
   BookOpen,
