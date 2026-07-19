@@ -105,12 +105,22 @@ export default function Step3DataEntry({
 
   return (
     <div className="animate-slide-up">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">Ingreso de Resultados</h2>
-        <p className="text-sm text-white/60">
-          Paciente: <span className="font-medium text-white/80">{patient.firstName} {patient.lastName}</span>
-          {" · "}Pruebas: <span className="font-medium text-white/80">{tests.length}</span>
-        </p>
+      <div className="mb-6 flex justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-white">Ingreso de Resultados</h2>
+          <p className="text-sm text-white/60">
+            Paciente: <span className="font-medium text-white/80">{patient.firstName} {patient.lastName}</span>
+            {" · "}Pruebas: <span className="font-medium text-white/80">{tests.length}</span>
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-2.5 text-sm font-medium text-white shadow-lg transition hover:bg-emerald-500 disabled:opacity-50"
+        >
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading ? "Guardando Orden..." : "Guardar Orden"}
+        </button>
       </div>
 
       {/* Referring Doctor */}
@@ -199,7 +209,7 @@ export default function Step3DataEntry({
           disabled={loading}
           className="rounded-xl px-6 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
         >
-          Volver
+          Volver a Selección de pruebas
         </button>
         <button
           onClick={handleSave}

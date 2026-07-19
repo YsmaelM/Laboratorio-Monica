@@ -83,9 +83,27 @@ export default function Step2TestSelection({
 
   return (
     <div className="animate-slide-up">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">Selección de Pruebas</h2>
-        <p className="text-sm text-white/60">Busca o usa las acciones rápidas para agregar pruebas a la orden.</p>
+      <div className="mb-6 flex justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-white">Selección de Pruebas</h2>
+          <p className="text-sm text-white/60">Busca o usa las acciones rápidas para agregar pruebas a la orden.</p>
+        </div>
+        <div>
+          <button
+            onClick={onBack}
+            className="rounded-xl mr-4 px-6 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
+          >
+            Volver a Pacientes
+          </button>
+          <button
+            onClick={onNext}
+            disabled={selectedTests.length === 0}
+            className="rounded-xl bg-primary-600 px-8 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-primary-500 disabled:opacity-50"
+          >
+            Siguiente: Ingresar Resultados
+          </button>
+        </div>
+
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -94,6 +112,7 @@ export default function Step2TestSelection({
           <QuickActionButtons catalog={catalog} onSelect={handleSelect} />
           <TestCombobox catalog={catalog} onSelect={handleSelect} />
         </div>
+
 
 
         {/* Right Column: Selected Tests */}
@@ -108,7 +127,7 @@ export default function Step2TestSelection({
           onClick={onBack}
           className="rounded-xl px-6 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
         >
-          Volver
+          Volver a Pacientes
         </button>
         <button
           onClick={onNext}
