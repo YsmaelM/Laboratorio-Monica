@@ -22,7 +22,7 @@ export function PdfSectionFactory({ entry, patient }: PdfSectionFactoryProps) {
       )
     case "culture":
       return (
-        <View wrap={false} style={{ marginBottom: 6 }}>
+        <View style={{ marginBottom: 6 }}>
           <Text style={[s.sectionTitle, { marginBottom: 4 }]}>{entry.testName}</Text>
           <CulturePdfSection entry={entry} />
         </View>

@@ -13,11 +13,12 @@ interface BacteriologyConfig {
   antibiotics: string[]
   microorganisms: string[]
   negativeResponses: string[]
+  sampleTypes: string[]
 }
 
-const SAMPLE_TYPES = [
+const DEFAULT_SAMPLE_TYPES = [
   "Orina", "Sangre", "Herida", "Esputo", "Heces", "Secreción Vaginal",
-  "Secreción Uretral", "Líquido Cefalorraquídeo", "Otro",
+  "Secreción Uretral", "Líquido Cefalorraquídeo",
 ]
 
 export default function CultureForm({ entry, onChange }: CultureFormProps) {
@@ -27,6 +28,7 @@ export default function CultureForm({ entry, onChange }: CultureFormProps) {
     antibiotics: [],
     microorganisms: [],
     negativeResponses: [],
+    sampleTypes: DEFAULT_SAMPLE_TYPES,
   })
   const [loadingConfig, setLoadingConfig] = useState(true)
 
@@ -44,6 +46,7 @@ export default function CultureForm({ entry, onChange }: CultureFormProps) {
             antibiotics: res.antibiotics || [],
             microorganisms: res.microorganisms || [],
             negativeResponses: res.negativeResponses || [],
+            sampleTypes: res.sampleTypes && res.sampleTypes.length > 0 ? res.sampleTypes : DEFAULT_SAMPLE_TYPES,
           })
         }
       } catch (err) {
@@ -125,6 +128,9 @@ export default function CultureForm({ entry, onChange }: CultureFormProps) {
   const isPositive = data.cultureResult === "Positive" || data.cultureResult === "Positivo"
   const isCustomNegativeSelected = data.cultureResultNotes === "custom_response"
 
+  const sampleTypesList = dbConfig.sampleTypes && dbConfig.sampleTypes.length > 0 ? dbConfig.sampleTypes : DEFAULT_SAMPLE_TYPES
+  const isPresetSample = sampleTypesList.includes(data.sampleType)
+
   if (loadingConfig) {
     return (
       <div className="flex items-center justify-center py-6 text-white/50 text-xs gap-2">
@@ -141,15 +147,35 @@ export default function CultureForm({ entry, onChange }: CultureFormProps) {
         <div>
           <label className="mb-1 block text-xs font-medium text-white/60">Tipo de Muestra *</label>
           <select
-            value={data.sampleType}
-            onChange={(e) => updateField("sampleType", e.target.value)}
+            value={isPresetSample ? data.sampleType : (data.sampleType ? "Otro" : "")}
+            onChange={(e) => {
+              const val = e.target.value
+              if (val === "Otro") {
+                updateField("sampleType", "Otro")
+              } else {
+                updateField("sampleType", val)
+              }
+            }}
             className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             <option value="" className="bg-surface-900">Seleccionar...</option>
-            {SAMPLE_TYPES.map(s => (
+            {sampleTypesList.map(s => (
               <option key={s} value={s} className="bg-surface-900">{s}</option>
             ))}
+            <option value="Otro" className="bg-surface-950 font-semibold text-primary-400">✏️ Otro (Escribir personalizado)...</option>
           </select>
+
+          {(!isPresetSample && data.sampleType !== "") && (
+            <div className="mt-2 animate-slide-up">
+              <input
+                type="text"
+                value={data.sampleType === "Otro" ? "" : data.sampleType}
+                onChange={(e) => updateField("sampleType", e.target.value || "Otro")}
+                placeholder="Escribe el tipo de muestra..."
+                className="w-full rounded-xl border border-primary-500/30 bg-primary-500/5 px-4 py-2 text-xs text-white placeholder-white/30 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+          )}
         </div>
 
         <div>

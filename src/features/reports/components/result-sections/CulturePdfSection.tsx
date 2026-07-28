@@ -21,13 +21,15 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
   // Filtrar las celdas para ignorar filas vacías que se hayan quedado guardadas sin antibiótico seleccionado
   const validAntibiogram = (data.antibiogram || []).filter(row => row.antibiotic && row.antibiotic.trim() !== "");
 
+  const displaySampleType = !data.sampleType || data.sampleType === "Otro" ? "No especificada" : data.sampleType
+
   return (
     <View style={{ marginTop: 4 }}>
       {/* Basic Info */}
       <View style={{ flexDirection: "row", marginBottom: 10 }}>
         <View style={{ flex: 1 }}>
           <Text style={s.subSectionTitle}>Tipo de Muestra</Text>
-          <Text style={s.tableCell}>{data.sampleType || "No especificada"}</Text>
+          <Text style={s.tableCell}>{displaySampleType}</Text>
         </View>
 
         {hasGram && (
@@ -61,16 +63,16 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
           </View>
 
           {validAntibiogram.length > 0 ? (
-            <View wrap={false}>
+            <View>
               <Text style={s.subSectionTitle}>Antibiograma</Text>
 
-              {/* CABECERA CORREGIDA: Sin columna de MIC */}
-              <View style={[s.tableHeader, { marginTop: 4 }]}>
+              {/* fixed: encabezado se repite en cada página */}
+              <View fixed style={[s.tableHeader, { marginTop: 4 }]}>
                 <Text style={[s.tableHeaderText, { flex: 2.5 }]}>Antibiótico</Text>
                 <Text style={[s.tableHeaderText, { flex: 1, textAlign: "center" }]}>Resultado</Text>
               </View>
 
-              {/* FILAS FILTRADAS SANEADAS */}
+              {/* Cada fila wrap={false} para que no se divida a la mitad */}
               {validAntibiogram.map((row, idx) => {
                 let resultStyle = {}
                 let resultLabel: string = row.result
@@ -79,7 +81,7 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
                 if (row.result === "R") { resultStyle = s.abgResistant; resultLabel = "Resistente" }
 
                 return (
-                  <View key={idx} style={[s.tableRow, idx % 2 !== 0 ? s.tableRowAlt : {}]}>
+                  <View key={idx} wrap={false} style={[s.tableRow, idx % 2 !== 0 ? s.tableRowAlt : {}]}>
                     <Text style={[s.tableCell, { flex: 2.5 }]}>{row.antibiotic}</Text>
                     <Text style={[s.tableCell, { flex: 1, textAlign: "center" }, resultStyle]}>
                       {resultLabel}

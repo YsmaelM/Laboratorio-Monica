@@ -70,7 +70,6 @@ export function ReportDocument({ order, labInfo }: ReportDocumentProps) {
         orderDate={orderDate}
         referringDoctor={order.referringDoctor}
       >
-        {/* ── 3. RENDERIZADO DE BLOQUES COMPACTADO SIN ESPACIOS SUELTOS ── */}
         {renderBlocks.map((block, idx) => {
           if (block.type === "grouped_simple") {
             return (

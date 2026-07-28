@@ -1,13 +1,25 @@
 import { useState, useEffect } from "react"
-import { Shield, Plus, Trash2, Loader2, FileText, Activity } from "lucide-react"
+import { Shield, Plus, Trash2, Loader2, FileText, Activity, TestTube } from "lucide-react"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import toast from "react-hot-toast"
+
+const DEFAULT_SAMPLE_TYPES = [
+  "Orina",
+  "Sangre",
+  "Herida",
+  "Esputo",
+  "Heces",
+  "Secreción Vaginal",
+  "Secreción Uretral",
+  "Líquido Cefalorraquídeo",
+]
 
 interface BacteriologyConfig {
   antibiotics: string[]
   microorganisms: string[]
   negativeResponses: string[]
+  sampleTypes: string[]
 }
 
 interface BacteriologyTabProps {
@@ -20,6 +32,7 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
     antibiotics: [],
     microorganisms: [],
     negativeResponses: [],
+    sampleTypes: DEFAULT_SAMPLE_TYPES,
   })
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsGenerating] = useState(false)
@@ -28,6 +41,7 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
   const [newAntibiotic, setNewAntibiotic] = useState("")
   const [newMicroorganism, setNewMicroorganism] = useState("")
   const [newNegativeResponse, setNewNegativeResponse] = useState("")
+  const [newSampleType, setNewSampleType] = useState("")
 
   // Cargar configuraciones globales de Firestore al montar la pestaña
   useEffect(() => {
@@ -40,6 +54,7 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
             antibiotics: data.antibiotics || [],
             microorganisms: data.microorganisms || [],
             negativeResponses: data.negativeResponses || [],
+            sampleTypes: data.sampleTypes && data.sampleTypes.length > 0 ? data.sampleTypes : DEFAULT_SAMPLE_TYPES,
           })
         }
       } catch (err) {
@@ -124,10 +139,51 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
         )}
       </div>
 
-      {/* Grilla de 3 Columnas para las Secciones de Configuración */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Grilla de 4 Columnas para las Secciones de Configuración */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 
-        {/* COLUMNA 1: GESTIÓN DE ANTIBIÓTICOS */}
+        {/* COLUMNA 1: GESTIÓN DE TIPOS DE MUESTRA */}
+        <div className="flex flex-col rounded-2xl border border-white/10 bg-surface-900 p-4 min-h-[450px]">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-white mb-1">
+            <TestTube className="h-4 w-4 text-emerald-400" /> Tipos de Muestra
+          </h3>
+          <p className="text-xs text-white/40 mb-4">Muestras disponibles para los formularios de cultivo.</p>
+
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              placeholder="Ej: Secreción Ótica"
+              value={newSampleType}
+              onChange={e => setNewSampleType(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && addItem("sampleTypes", newSampleType, () => setNewSampleType(""))}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white outline-none focus:border-primary-500"
+            />
+            <button
+              type="button"
+              onClick={() => addItem("sampleTypes", newSampleType, () => setNewSampleType(""))}
+              className="rounded-xl bg-primary-600 p-2 text-white hover:bg-primary-500 transition"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[350px] scrollbar-thin">
+            {config.sampleTypes.length === 0 ? (
+              <p className="text-xs text-white/30 italic text-center py-8">Sin tipos de muestra cargados.</p>
+            ) : (
+              config.sampleTypes.map((st, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded-xl bg-white/[0.02] border border-white/5 px-3 py-2 text-xs text-white/80 transition hover:bg-white/[0.04]">
+                  <span>{st}</span>
+                  <button onClick={() => removeItem("sampleTypes", idx)} className="text-white/40 hover:text-red-400 transition p-1">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* COLUMNA 2: GESTIÓN DE ANTIBIÓTICOS */}
         <div className="flex flex-col rounded-2xl border border-white/10 bg-surface-900 p-4 min-h-[450px]">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-white mb-1">
             <Activity className="h-4 w-4 text-purple-400" /> Antibióticos
@@ -145,6 +201,7 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white outline-none focus:border-primary-500"
             />
             <button
+              type="button"
               onClick={() => addItem("antibiotics", newAntibiotic, () => setNewAntibiotic(""))}
               className="rounded-xl bg-primary-600 p-2 text-white hover:bg-primary-500 transition"
             >
@@ -169,7 +226,7 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
           </div>
         </div>
 
-        {/* COLUMNA 2: GESTIÓN DE MICROORGANISMOS */}
+        {/* COLUMNA 3: GESTIÓN DE MICROORGANISMOS */}
         <div className="flex flex-col rounded-2xl border border-white/10 bg-surface-900 p-4 min-h-[450px]">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-white mb-1">
             <Shield className="h-4 w-4 text-blue-400" /> Microorganismos
@@ -186,6 +243,7 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white outline-none focus:border-primary-500"
             />
             <button
+              type="button"
               onClick={() => addItem("microorganisms", newMicroorganism, () => setNewMicroorganism(""))}
               className="rounded-xl bg-primary-600 p-2 text-white hover:bg-primary-500 transition"
             >
@@ -208,7 +266,8 @@ export default function BacteriologyTab({ onRefresh }: BacteriologyTabProps) {
             )}
           </div>
         </div>
-        {/* COLUMNA 3: RESPUESTAS PREDETERMINADAS NEGATIVAS */}
+
+        {/* COLUMNA 4: RESPUESTAS PREDETERMINADAS NEGATIVAS */}
         <div className="flex flex-col rounded-2xl border border-white/10 bg-surface-900 p-4 min-h-[450px]">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-white mb-1">
             <FileText className="h-4 w-4 text-amber-400" /> Respuestas Negativas

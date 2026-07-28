@@ -188,20 +188,59 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
     blocks.push(current)
   }
 
+  // ── ESTIMACIÓN DE ALTURA para paginación inteligente ─────────────────────────
+  // Constantes calibradas contra el PDF renderizado real (Inter font, pdfStyles.ts)
+  const ROW_H = 15        // simpleRow: paddingVertical ~5 + fontSize ~8.5 + border ≈ 15pt rendered
+  const HEADER_H = 18     // subSectionTitle con márgenes reales
+  const TBL_HEADER_H = 16 // tableHeader: paddingVertical 4 + fontSize 7.5 + marginTop 4
+  const TITLE_H = 20      // sectionTitle fontSize 11 + marginTop+Bottom reales
+  const EMPTY_H = 6       // empty row height
+  const BLOCK_MARGIN = 6  // marginBottom de cada bloque
+  // Área útil del Main: LETTER (792) - paddingTop (150) - paddingBottom (100)
+  const PAGE_MAIN_H = 542
+
+  // Función para estimar la altura de un bloque individual
+  const estimateBlockHeight = (block: Block, includeTitle: boolean): number => {
+    return (includeTitle ? TITLE_H : 0)
+      + (block.sectionHeader ? HEADER_H : 0)
+      + (block.testRow ? TBL_HEADER_H + ROW_H : 0)
+      + block.simpleRows.length * ROW_H
+      + block.emptyRows.length * EMPTY_H
+      + BLOCK_MARGIN
+  }
+
+  // Altura total estimada de toda la prueba custom
+  const totalEstimatedHeight = blocks.reduce(
+    (sum, block, idx) => sum + estimateBlockHeight(block, showTitle && idx === 0),
+    0
+  )
+
+  // minPresenceAhead con factor 0.8x: SER PERMISIVO.
+  // Solo saltar a la siguiente página cuando claramente NO hay espacio.
+  const presenceAhead = Math.min(Math.ceil(totalEstimatedHeight * 0.8), PAGE_MAIN_H)
+
+  // Para la decisión de wrap={false} en bloques, usar 1.2x para ser CONSERVADOR:
+  const blockFitsThreshold = PAGE_MAIN_H / 1.2
+
   return (
-    <View style={{ marginBottom: 8 }}>
+    <View minPresenceAhead={presenceAhead} style={{ marginBottom: 8 }}>
       {blocks.map((block, blockIdx) => {
         const testRow = block.testRow
         const totalWeight = testRow ? testRow.columns.reduce((acc: number, c: any) => acc + (c.width ?? 1), 0) : 1
         const refColumn = testRow ? testRow.columns.find((c: any) => c.type === "reference") : null
 
+        // Estimar altura de ESTE bloque para decidir si puede ser atómico
+        const blockHeight = estimateBlockHeight(block, showTitle && blockIdx === 0)
+        // Usar threshold conservador (~452pt) para evitar clipping en bloques al límite
+        const blockFitsOnPage = blockHeight <= blockFitsThreshold
+
         return (
           <View
             key={`block-${blockIdx}`}
-            wrap={false}
+            wrap={blockFitsOnPage ? false : undefined}
             style={{ marginBottom: 8 }}
           >
-            {/* Título del formato: DENTRO del primer bloque wrap={false} para que nunca quede huérfano */}
+            {/* Título del formato */}
             {showTitle && blockIdx === 0 && (
               <View style={{ marginBottom: 4 }}>
                 <Text style={s.sectionTitle}>{entry.testName}</Text>
@@ -210,16 +249,19 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
 
             {/* Sub-encabezado de sección */}
             {block.sectionHeader && (
-              <View style={{ marginTop: 6, marginBottom: 3 }}>
+              <View
+                minPresenceAhead={blockFitsOnPage ? undefined : 60}
+                style={{ marginTop: 6, marginBottom: 3 }}
+              >
                 <Text style={[s.subSectionTitle, { borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0", paddingBottom: 2 }]}>
                   {block.sectionHeader.text}
                 </Text>
               </View>
             )}
 
-            {/* Encabezados de columna + primera fila (tipo test) */}
+            {/* Encabezados de columna + primera fila */}
             {testRow && (
-              <View>
+              <View wrap={false}>
                 {/* Encabezados de columna */}
                 <View style={[s.tableHeader, { marginTop: 4 }]}>
                   {testRow.columns.map((col: any) => {
@@ -250,6 +292,7 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
               return (
                 <View
                   key={row.id}
+                  wrap={false}
                   style={[
                     s.tableRow,
                     {

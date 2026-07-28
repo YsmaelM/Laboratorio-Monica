@@ -38,12 +38,13 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
 
   return (
     <View style={{ marginTop: 10 }}>
-      {/* Membrete inicial */}
-      <View style={s.sectionHeader}>
+      {/* Título + encabezado de tabla: juntos para evitar título huérfano */}
+      <View style={s.sectionHeader} wrap={false}>
         <Text style={s.sectionTitle}>Pruebas de laboratorio:</Text>
       </View>
 
-      <View style={s.tableHeader}>
+      {/* fixed: se repite en cada página cuando la tabla se extiende */}
+      <View fixed style={s.tableHeader}>
         <Text style={[s.tableHeaderText, { flex: 2 }]}>Prueba</Text>
         <Text style={[s.tableHeaderText, { flex: 1 }]}>Resultado</Text>
         <Text style={[s.tableHeaderText, { flex: 1 }]}>Unidad</Text>
