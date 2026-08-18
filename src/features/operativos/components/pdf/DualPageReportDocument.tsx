@@ -2,7 +2,7 @@ import { Document, Page, View, Text, Image } from "@react-pdf/renderer"
 import { GroupedSimplePdfSection } from "@/features/reports/components/result-sections/GroupedSimplePdfSection"
 import { PdfSectionFactory } from "@/features/reports/components/result-sections/PdfSectionFactory"
 import type { LabConfig, BatchEntry, SimpleTestEntry } from "@/shared/types"
-import { s as baseStyles, COLORS } from "@/features/reports/styles/pdfStyles"
+import { COLORS } from "@/features/reports/styles/pdfStyles"
 import { StyleSheet } from "@react-pdf/renderer"
 
 // Estilos compactos específicos para optimizar 2 reportes por hoja

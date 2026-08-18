@@ -5,7 +5,7 @@ import QuickBatchRegister from "./QuickBatchRegister"
 import BulkResultApplier from "./BulkResultApplier"
 import PatientResultRow from "./PatientResultRow"
 import ResultEditModal from "./ResultEditModal"
-import { Search, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 
 interface Step2PatientBatchProps {
   templateTests: TestEntry[]
@@ -27,7 +27,6 @@ interface Step2PatientBatchProps {
 
 export default function Step2PatientBatch({
   templateTests,
-  patients,
   paginatedPatients,
   currentPage,
   setCurrentPage,
@@ -42,13 +41,11 @@ export default function Step2PatientBatch({
   onNext,
   onBack,
 }: Step2PatientBatchProps) {
-  const [nationalIdQuery, setNationalIdQuery] = useState("")
   const [showQuickRegister, setShowQuickRegister] = useState(false)
   const [activeModalEntry, setActiveModalEntry] = useState<BatchEntry | null>(null)
 
   const handlePatientFound = (patient: Patient) => {
     addPatient(patient)
-    setNationalIdQuery("")
   }
 
   return (
@@ -85,7 +82,7 @@ export default function Step2PatientBatch({
             onPatientFound={(p) => {
               if (p) handlePatientFound(p)
             }}
-            onRegisterNew={(nationalId) => {
+            onRegisterNew={(_nationalId) => {
               // Cargar ID de registro en búsqueda y abrir modal
               setShowQuickRegister(true)
             }}

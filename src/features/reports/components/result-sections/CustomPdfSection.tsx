@@ -211,7 +211,7 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
 
   // Altura total estimada de toda la prueba custom
   const totalEstimatedHeight = blocks.reduce(
-    (sum, block, idx) => sum + estimateBlockHeight(block, showTitle && idx === 0),
+    (sum, block, idx) => sum + estimateBlockHeight(block, !!(showTitle && idx === 0)),
     0
   )
 
@@ -230,7 +230,7 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
         const refColumn = testRow ? testRow.columns.find((c: any) => c.type === "reference") : null
 
         // Estimar altura de ESTE bloque para decidir si puede ser atómico
-        const blockHeight = estimateBlockHeight(block, showTitle && blockIdx === 0)
+        const blockHeight = estimateBlockHeight(block, !!(showTitle && blockIdx === 0))
         // Usar threshold conservador (~452pt) para evitar clipping en bloques al límite
         const blockFitsOnPage = blockHeight <= blockFitsThreshold
 

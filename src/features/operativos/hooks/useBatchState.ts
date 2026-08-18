@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react"
 import type { Patient, TestEntry, BatchEntry } from "@/shared/types"
-import { createTestEntry } from "@/features/orders/utils/createTestEntry"
+
 
 export function useBatchState(templateTests: TestEntry[]) {
   const [patients, setPatients] = useState<BatchEntry[]>([])
@@ -10,7 +10,7 @@ export function useBatchState(templateTests: TestEntry[]) {
   const addPatient = useCallback((patient: Patient) => {
     setPatients((prev) => {
       if (prev.some((p) => p.patientId === patient.id)) return prev
-      
+
       const newEntry: BatchEntry = {
         patientId: patient.id,
         patient: {

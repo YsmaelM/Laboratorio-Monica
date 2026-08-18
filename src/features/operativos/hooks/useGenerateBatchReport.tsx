@@ -59,7 +59,7 @@ export function useGenerateBatchReport() {
 
       setProgress(40)
       const cleanedData = cleanUndefined(batchData)
-      
+
       if (batchId) {
         await setDoc(doc(db, "batch_operations", batchId), {
           ...cleanedData,
@@ -116,7 +116,7 @@ export function useGenerateBatchReport() {
         )
       }
 
-      const blob = await pdf(docElement).toBlob()
+      const blob = await pdf(docElement as any).toBlob()
       const localUrl = URL.createObjectURL(blob)
 
       if (batchId) {

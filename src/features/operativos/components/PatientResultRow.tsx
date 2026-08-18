@@ -1,4 +1,3 @@
-import { useState } from "react"
 import type { BatchEntry, TestEntry } from "@/shared/types"
 import { Trash2, Edit2, CheckCircle2, AlertCircle } from "lucide-react"
 

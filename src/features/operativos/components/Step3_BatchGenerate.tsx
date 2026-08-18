@@ -1,7 +1,7 @@
 import { useState } from "react"
 import type { BatchEntry, TestEntry, LabConfig } from "@/shared/types"
 import { useGenerateBatchReport } from "../hooks/useGenerateBatchReport"
-import { FileText, Loader2, ExternalLink, Settings, X, Check } from "lucide-react"
+import { FileText, Loader2, ExternalLink, X, Check } from "lucide-react"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import toast from "react-hot-toast"
@@ -30,10 +30,7 @@ export default function Step3BatchGenerate({
   const [layoutMode, setLayoutMode] = useState<"single" | "dual">("single")
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null)
-  const [isSaved, setIsSaved] = useState(false)
 
-  // Solo permitimos modo dual (2 por página) si todas las pruebas son de formato simple (e.g. V.D.R.L)
-  const allSimple = templateTests.every((t) => t.format === "simple")
 
   const handleGenerateClick = () => {
     setShowSignatureModal(true)
@@ -68,7 +65,6 @@ export default function Step3BatchGenerate({
         toast.error("Error al guardar los registros del operativo en Firestore")
         return
       }
-      setIsSaved(true)
 
       // 3. Generar el PDF consolidado masivo y subirlo a Storage pasándole el ID
       const pdfUrl = await generateBatchPdf(entries, labInfo, layoutMode, referringDoctor, savedId)
@@ -122,11 +118,10 @@ export default function Step3BatchGenerate({
           {/* Opción 1 por página */}
           <div
             onClick={() => setLayoutMode("single")}
-            className={`cursor-pointer rounded-xl border p-4 transition ${
-              layoutMode === "single"
-                ? "border-primary-500 bg-primary-500/5 text-white"
-                : "border-white/10 bg-surface-900/50 hover:bg-white/5 text-white/70"
-            }`}
+            className={`cursor-pointer rounded-xl border p-4 transition ${layoutMode === "single"
+              ? "border-primary-500 bg-primary-500/5 text-white"
+              : "border-white/10 bg-surface-900/50 hover:bg-white/5 text-white/70"
+              }`}
           >
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium text-sm">Estándar (1 Paciente por página)</span>
@@ -140,11 +135,10 @@ export default function Step3BatchGenerate({
           {/* Opción 2 por página */}
           <div
             onClick={() => setLayoutMode("dual")}
-            className={`rounded-xl border p-4 transition cursor-pointer ${
-              layoutMode === "dual"
-                ? "border-primary-500 bg-primary-500/5 text-white"
-                : "border-white/10 bg-surface-900/50 hover:bg-white/5 text-white/70"
-            }`}
+            className={`rounded-xl border p-4 transition cursor-pointer ${layoutMode === "dual"
+              ? "border-primary-500 bg-primary-500/5 text-white"
+              : "border-white/10 bg-surface-900/50 hover:bg-white/5 text-white/70"
+              }`}
           >
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium text-sm">Ahorro de Impresión (2 Pacientes por hoja)</span>
