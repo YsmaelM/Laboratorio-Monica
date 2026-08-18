@@ -212,7 +212,13 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
             {block.sectionHeader && (
               <View style={{ marginTop: 6, marginBottom: 3 }}>
                 <Text style={[s.subSectionTitle, { borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0", paddingBottom: 2 }]}>
-                  {block.sectionHeader.text}
+                  {block.sectionHeader.text
+                    .replace(/Á/g, "A")
+                    .replace(/É/g, "E")
+                    .replace(/Í/g, "I")
+                    .replace(/Ó/g, "O")
+                    .replace(/Ú/g, "U")
+                  }
                 </Text>
               </View>
             )}

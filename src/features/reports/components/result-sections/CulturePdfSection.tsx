@@ -9,6 +9,14 @@ interface CulturePdfSectionProps {
 export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
   const { data } = entry
 
+  // Traduce valores legacy en inglés que pudieran estar guardados en Firestore
+  const translateResult = (val: string | undefined) => {
+    if (!val) return "—"
+    if (val === "Negative") return "Negativo"
+    if (val === "Positive") return "Positivo"
+    return val
+  }
+
   const isPositive = data.cultureResult === "Positive" || data.cultureResult === "Positivo"
 
 
@@ -40,7 +48,7 @@ export function CulturePdfSection({ entry }: CulturePdfSectionProps) {
         <View style={{ flex: 1 }}>
           <Text style={s.subSectionTitle}>Resultado:</Text>
           <Text style={[s.tableCellBold, isPositive ? s.flagHigh : { color: "#10b981" }]}>
-            {data.cultureResult}
+            {translateResult(data.cultureResult)}
           </Text>
         </View>
       </View>

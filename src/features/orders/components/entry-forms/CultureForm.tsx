@@ -16,7 +16,7 @@ interface BacteriologyConfig {
 }
 
 const SAMPLE_TYPES = [
-  "Orina", "Sangre", "Herida", "Esputo", "Heces", "Secreción Vaginal",
+  "Orina", "Exudado Fanringeo", "Sangre", "Herida", "Esputo", "Heces", "Secreción Vaginal",
   "Secreción Uretral", "Líquido Cefalorraquídeo", "Otro",
 ]
 
@@ -178,8 +178,8 @@ export default function CultureForm({ entry, onChange }: CultureFormProps) {
               })
             }}
             className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition ${!isPositive
-                ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/50"
-                : "border border-white/10 text-white/50 hover:bg-white/5"
+              ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/50"
+              : "border border-white/10 text-white/50 hover:bg-white/5"
               }`}
           >
             Negativo
@@ -188,8 +188,8 @@ export default function CultureForm({ entry, onChange }: CultureFormProps) {
             type="button"
             onClick={() => updateField("cultureResult", "Positivo")}
             className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition ${isPositive
-                ? "bg-red-600/20 text-red-300 border border-red-500/50"
-                : "border border-white/10 text-white/50 hover:bg-white/5"
+              ? "bg-red-600/20 text-red-300 border border-red-500/50"
+              : "border border-white/10 text-white/50 hover:bg-white/5"
               }`}
           >
             Positivo

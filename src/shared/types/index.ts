@@ -252,6 +252,7 @@ export type TestEntry =
 
 export interface OrderResult {
   id: string
+  batchId?: string
   patientId: string
   patientSnapshot: PatientSnapshot
   orderDate: Timestamp
@@ -263,3 +264,27 @@ export interface OrderResult {
   createdAt: Timestamp
   updatedAt: Timestamp
 }
+
+// ─────────────────────────────────────────────
+// Batch Operations (Operativos)
+// ─────────────────────────────────────────────
+export interface BatchEntry {
+  patientId: string
+  patient: PatientSnapshot
+  tests: TestEntry[]
+  isComplete: boolean
+}
+
+export interface BatchOperation {
+  id?: string
+  name: string
+  templateTests: TestEntry[]
+  referringDoctor?: string
+  entries: BatchEntry[]
+  status: "draft" | "completed"
+  pdfUrl?: string
+  createdBy: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+

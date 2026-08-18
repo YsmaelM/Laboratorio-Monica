@@ -26,7 +26,7 @@ export function createTestEntry(catalogItem: TestCatalogItem): TestEntry {
         format: "culture",
         data: {
           sampleType: "",
-          cultureResult: "Negative",
+          cultureResult: "Negativo",
         },
       }
 

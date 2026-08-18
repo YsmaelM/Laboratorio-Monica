@@ -6,7 +6,7 @@ import {
   BookOpen,
   Settings,
   LogOut,
-  ChevronRight, BookUser
+  ChevronRight, BookUser, UsersRound
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { APP_NAME } from "@/shared/lib/constants"
@@ -14,6 +14,7 @@ import { APP_NAME } from "@/shared/lib/constants"
 const navItems = [
   { to: "/newOrder", icon: ClipboardList, label: "Nueva Orden" },
   { to: "/orders", icon: History, label: "Historial" },
+  { to: "/operativos", icon: UsersRound, label: "Operativos" },
   { to: "/catalog", icon: BookOpen, label: "Catálogo" },
   { to: "/patiens", icon: BookUser, label: "Pacientes" },
   { to: "/settings", icon: Settings, label: "Configuración" },
