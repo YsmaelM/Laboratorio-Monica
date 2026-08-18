@@ -12,6 +12,7 @@ const OrderHistoryPage = lazy(() => import("@/features/orders/pages/OrderHistory
 const LabSettingsPage = lazy(() => import("@/features/settings/pages/LabSettingsPage"))
 const PatiensListPage = lazy(() => import("@/features/patients/components/PatiensListPage"))
 const CatalogManagementPage = lazy(() => import("@/features/catalog/pages/CatalogManagementPage"))
+const OperativosPage = lazy(() => import("@/features/operativos/pages/OperativosPage"))
 
 
 
@@ -50,6 +51,7 @@ export default function AppRoutes() {
                   <Route path="catalog" element={<CatalogManagementPage />} />
                   <Route path="settings" element={<LabSettingsPage />} />
                   <Route path="patiens" element={<PatiensListPage />} />
+                  <Route path="operativos" element={<OperativosPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </MainLayout>
