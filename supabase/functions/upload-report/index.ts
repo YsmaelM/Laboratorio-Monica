@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-const FIREBASE_API_KEY = Deno.env.get("FIREBASE_API_KEY") || "AIzaSyDaFQnhriRJ4VCh8gw4VWfK40JhQtoN_js"
+const FIREBASE_API_KEY = Deno.env.get("FIREBASE_API_KEY")
 
 serve(async (req) => {
   // Handle CORS preflight requests
