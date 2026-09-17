@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react"
 import { Plus, Save, Loader2, Trash2, AlertCircle } from "lucide-react"
 import type { Patient, TestEntry } from "@/shared/types"
 import { usePatientMutation } from "@/features/patients/hooks/usePatientMutation"
-import { Timestamp } from "firebase/firestore"
 import toast from "react-hot-toast"
 
 interface QuickRow {

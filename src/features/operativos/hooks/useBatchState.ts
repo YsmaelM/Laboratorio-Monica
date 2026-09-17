@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react"
 import type { Patient, TestEntry, BatchEntry } from "@/shared/types"
-import { createTestEntry } from "@/features/orders/utils/createTestEntry"
 
 export function useBatchState(templateTests: TestEntry[]) {
   const [patients, setPatients] = useState<BatchEntry[]>([])

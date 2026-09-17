@@ -1,7 +1,7 @@
 import { useState } from "react"
 import type { BatchEntry, TestEntry, LabConfig } from "@/shared/types"
 import { useGenerateBatchReport } from "../hooks/useGenerateBatchReport"
-import { FileText, Loader2, ExternalLink, Settings, X, Check } from "lucide-react"
+import { FileText, Loader2, ExternalLink, X, Check } from "lucide-react"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import toast from "react-hot-toast"
@@ -30,10 +30,6 @@ export default function Step3BatchGenerate({
   const [layoutMode, setLayoutMode] = useState<"single" | "dual">("single")
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null)
-  const [isSaved, setIsSaved] = useState(false)
-
-  // Solo permitimos modo dual (2 por página) si todas las pruebas son de formato simple (e.g. V.D.R.L)
-  const allSimple = templateTests.every((t) => t.format === "simple")
 
   const handleGenerateClick = () => {
     setShowSignatureModal(true)
@@ -68,7 +64,6 @@ export default function Step3BatchGenerate({
         toast.error("Error al guardar los registros del operativo en Firestore")
         return
       }
-      setIsSaved(true)
 
       // 3. Generar el PDF consolidado masivo y subirlo a Storage pasándole el ID
       const pdfUrl = await generateBatchPdf(entries, labInfo, layoutMode, referringDoctor, savedId)

@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { pdf } from "@react-pdf/renderer"
 import { collection, addDoc, setDoc, doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { db, storage } from "@/shared/lib/firebase"
+import { db } from "@/shared/lib/firebase"
+import { uploadReportSecurely } from "@/shared/lib/supabase"
 import { useAuth } from "@/app/providers/AuthProvider"
 import { BatchReportDocument } from "../components/pdf/BatchReportDocument"
 import { DualPageReportDocument } from "../components/pdf/DualPageReportDocument"
@@ -97,7 +97,7 @@ export function useGenerateBatchReport() {
     setError(null)
 
     try {
-      let docElement: React.ReactElement
+      let docElement: React.ReactElement<any>
       if (layoutMode === "dual") {
         docElement = (
           <DualPageReportDocument
@@ -121,25 +121,32 @@ export function useGenerateBatchReport() {
 
       if (batchId) {
         try {
-          const cleanBatchName = labInfo.labName.replace(/\s+/g, '_').toUpperCase()
-          const fileName = `batch_reports/${batchId}_${Date.now()}.pdf`
-          const storageRef = ref(storage, fileName)
+          const now = new Date()
+          const day = String(now.getDate()).padStart(2, "0")
+          const month = String(now.getMonth() + 1).padStart(2, "0")
+          const year = now.getFullYear()
+          const dateStr = `${day}_${month}_${year}`
 
-          const metadata = {
-            contentType: "application/pdf",
-            contentDisposition: `inline; filename="OPERATIVO_${cleanBatchName}.pdf"`
-          }
+          const cleanBatchName = (labInfo.labName || "LOTE")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[/\\?%*:|"<>]/g, "")
+            .replace(/\s+/g, '_')
+            .toUpperCase()
 
-          await uploadBytes(storageRef, blob, metadata)
-          const pdfUrl = await getDownloadURL(storageRef)
+          const downloadName = `OPERATIVO_${cleanBatchName}_${dateStr}.pdf`
+          const fileName = `batch_reports/${batchId}/${downloadName}`
+
+          const pdfUrl = await uploadReportSecurely(fileName, blob, downloadName)
 
           // Guardar URL en el documento del batch
           await updateDoc(doc(db, "batch_operations", batchId), {
             pdfUrl
           })
           return pdfUrl
-        } catch (uploadErr) {
-          console.warn("Storage upload failed for batch, falling back to local Blob URL:", uploadErr)
+        } catch (uploadErr: any) {
+          console.error("Supabase Storage upload failed for batch, falling back to local Blob URL:", uploadErr)
+          setError(`Aviso: No se pudo guardar en Storage (${uploadErr.message || uploadErr}).`)
           return localUrl
         }
       }

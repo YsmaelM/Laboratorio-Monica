@@ -1,9 +1,8 @@
-import { Document, View, Text } from "@react-pdf/renderer"
+import { Document } from "@react-pdf/renderer"
 import { PageWrapper } from "@/features/reports/components/PageWrapper"
 import { PdfSectionFactory } from "@/features/reports/components/result-sections/PdfSectionFactory"
 import { GroupedSimplePdfSection } from "@/features/reports/components/result-sections/GroupedSimplePdfSection"
 import type { LabConfig, BatchEntry, SimpleTestEntry } from "@/shared/types"
-import { s } from "@/features/reports/styles/pdfStyles"
 
 interface BatchReportDocumentProps {
   entries: BatchEntry[]
