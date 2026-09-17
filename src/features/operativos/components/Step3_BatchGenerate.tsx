@@ -30,7 +30,10 @@ export default function Step3BatchGenerate({
   const [layoutMode, setLayoutMode] = useState<"single" | "dual">("single")
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null)
+<<<<<<< HEAD
 
+=======
+>>>>>>> dev
 
   const handleGenerateClick = () => {
     setShowSignatureModal(true)

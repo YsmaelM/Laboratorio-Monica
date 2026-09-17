@@ -27,6 +27,10 @@ interface Step2PatientBatchProps {
 
 export default function Step2PatientBatch({
   templateTests,
+<<<<<<< HEAD
+=======
+  patients: _patients,
+>>>>>>> dev
   paginatedPatients,
   currentPage,
   setCurrentPage,
@@ -82,7 +86,11 @@ export default function Step2PatientBatch({
             onPatientFound={(p) => {
               if (p) handlePatientFound(p)
             }}
+<<<<<<< HEAD
             onRegisterNew={(_nationalId) => {
+=======
+            onRegisterNew={() => {
+>>>>>>> dev
               // Cargar ID de registro en búsqueda y abrir modal
               setShowQuickRegister(true)
             }}

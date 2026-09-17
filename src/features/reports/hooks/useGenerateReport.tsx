@@ -1,14 +1,15 @@
 import { useState } from "react"
 import { pdf } from "@react-pdf/renderer"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { doc, updateDoc, getDoc, Timestamp } from "firebase/firestore"
-import { db, storage } from "@/shared/lib/firebase"
+import { db } from "@/shared/lib/firebase"
+import { uploadReportSecurely } from "@/shared/lib/supabase"
 import { ReportDocument } from "../components/ReportDocument"
 import type { OrderResult, LabConfig } from "@/shared/types"
 
 export function useGenerateReport() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastFileName, setLastFileName] = useState<string | null>(null)
 
   const generatePreviewPdf = async (customLabInfo?: LabConfig): Promise<string | null> => {
     setIsGenerating(true)
@@ -128,7 +129,6 @@ export function useGenerateReport() {
           labInfo.signatureUrl = "/firma.jpg"
         }
       } else {
-        // Fallback lab info
         labInfo = {
           labName: "Laboratorio Clínico",
           address: "Dirección no configurada",
@@ -144,63 +144,64 @@ export function useGenerateReport() {
       // 3. Generate PDF Blob
       const blob = await pdf(<ReportDocument order={order} labInfo={labInfo} />).toBlob()
       const localUrl = URL.createObjectURL(blob)
+
+      // 4. Formatear y sanitizar nombre según el formato: Nombre_del_paciente_RESULTADO_FECHA
+      let dateStr = "FECHA"
       try {
-        // 4. Upload to Firebase Storage
-        const fileName = `reports/${order.patientId}/${orderId}_${Date.now()}.pdf`
-        const storageRef = ref(storage, fileName)
-
-        // 1. Convertir y formatear la fecha de la orden de forma segura (DD_MM_AAAA)
-        let dateStr = "FECHA"
-        try {
-          const raw = order.orderDate
-          let d: Date
-          if (raw instanceof Timestamp) {
-            d = raw.toDate()
-          } else if (typeof raw === "object" && raw !== null && "seconds" in raw) {
-            d = new Date((raw as any).seconds * 1000)
-          } else {
-            d = new Date(raw as any)
-          }
-
-          const day = String(d.getDate()).padStart(2, '0')
-          const month = String(d.getMonth() + 1).padStart(2, '0')
-          const year = d.getFullYear()
-          dateStr = `${day}_${month}_${year}`
-        } catch (dateErr) {
-          console.error("Error formatting date for filename:", dateErr)
+        const raw = order.orderDate
+        let d: Date
+        if (raw instanceof Timestamp) {
+          d = raw.toDate()
+        } else if (typeof raw === "object" && raw !== null && "seconds" in raw) {
+          d = new Date((raw as any).seconds * 1000)
+        } else if (raw) {
+          d = new Date(raw as any)
+        } else {
+          d = new Date()
         }
 
-        // 2. Sanitizar el nombre del paciente
-        const patientNameClean = `${order.patientSnapshot.firstName}_${order.patientSnapshot.lastName}`
-          .replace(/\s+/g, '_')
-          .toUpperCase();
+        const day = String(d.getDate()).padStart(2, "0")
+        const month = String(d.getMonth() + 1).padStart(2, "0")
+        const year = d.getFullYear()
+        dateStr = `${day}_${month}_${year}`
+      } catch (dateErr) {
+        console.error("Error formatting date for filename:", dateErr)
+      }
 
-        // 3. Unir todo en el formato final solicitado
-        const downloadName = `RESULTADO_${patientNameClean}_${dateStr}.pdf`;
+      const firstName = (order.patientSnapshot?.firstName || "").trim()
+      const lastName = (order.patientSnapshot?.lastName || "").trim()
+      const fullName = `${firstName} ${lastName}`.trim() || "PACIENTE"
 
-        // 4. Configurar la metadata con las cabeceras de descarga
-        const metadata = {
-          contentType: "application/pdf",
-          contentDisposition: `inline; filename="${downloadName}"`
-        };
+      // Sanitizar removiendo acentos y caracteres prohibidos en rutas y sistemas de archivos
+      const patientNameClean = fullName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[/\\?%*:|"<>]/g, "")
+        .replace(/\s+/g, "_")
+        .toUpperCase()
 
-        // 5. Subir a Firebase Storage
-        await uploadBytes(storageRef, blob, metadata)
-        const pdfUrl = await getDownloadURL(storageRef)
+      const downloadName = `${patientNameClean}_RESULTADO_${dateStr}.pdf`
+      setLastFileName(downloadName)
 
-        // 5. Update Order Document
+      const patientFolder = order.patientId || order.patientSnapshot?.patientId || "pacientes"
+      const fileName = `${patientFolder}/${downloadName}`
+
+      try {
+        // 5. Subir a Supabase Storage mediante Edge Function Segura (con fallback directo)
+        const pdfUrl = await uploadReportSecurely(fileName, blob, downloadName)
+
+        // 6. Actualizar Orden en Firestore con la URL persistente de Supabase
         await updateDoc(doc(db, "orders_results", orderId), {
           pdfUrl,
           status: "reported",
         })
 
         return pdfUrl
-
-
       } catch (uploadErr: any) {
-        console.warn("Firebase Storage upload failed (CORS/Permissions). Falling back to local Blob URL:", uploadErr)
+        console.error("Supabase Storage upload error:", uploadErr)
+        setError(`Aviso: El archivo no se pudo guardar en Storage (${uploadErr.message || uploadErr}).`)
 
-        // Update Firestore status to reported even if the PDF file upload failed
+        // En caso de fallo crítico en storage, actualizamos el estado para no bloquear el flujo pero guardamos el localUrl
         try {
           await updateDoc(doc(db, "orders_results", orderId), {
             status: "reported"
@@ -220,5 +221,5 @@ export function useGenerateReport() {
     }
   }
 
-  return { generateAndSavePdf, generatePreviewPdf, isGenerating, error }
+  return { generateAndSavePdf, generatePreviewPdf, isGenerating, error, lastFileName }
 }

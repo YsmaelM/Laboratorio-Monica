@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore"
-import { ref, deleteObject } from "firebase/storage"
-import { db, storage } from "@/shared/lib/firebase"
+import { db } from "@/shared/lib/firebase"
+import { deleteReportFromStorage } from "@/shared/lib/supabase"
 import type { OrderResult, BatchOperation } from "@/shared/types"
 import { Loader2, FileText, Search, Trash2, X, Users, ClipboardList } from "lucide-react"
 import toast from "react-hot-toast"
@@ -61,18 +61,7 @@ export default function OrderHistoryPage() {
       const targetOrder = orders.find(o => o.id === orderToDelete)
 
       if (targetOrder && targetOrder.pdfUrl) {
-        try {
-          const decodedUrl = decodeURIComponent(targetOrder.pdfUrl);
-          const pathStart = decodedUrl.indexOf("/o/") + 3;
-          const pathEnd = decodedUrl.indexOf("?alt=media");
-          const storagePath = decodedUrl.substring(pathStart, pathEnd);
-
-          const fileRef = ref(storage, storagePath)
-          await deleteObject(fileRef)
-          console.log("PDF físico eliminado de Storage con éxito.");
-        } catch (storageErr) {
-          console.warn("No se pudo eliminar el archivo físico de Storage:", storageErr)
-        }
+        await deleteReportFromStorage(targetOrder.pdfUrl)
       }
 
       await deleteDoc(doc(db, "orders_results", orderToDelete))
@@ -94,18 +83,7 @@ export default function OrderHistoryPage() {
       const targetBatch = batches.find(b => b.id === batchToDelete)
 
       if (targetBatch && targetBatch.pdfUrl) {
-        try {
-          const decodedUrl = decodeURIComponent(targetBatch.pdfUrl);
-          const pathStart = decodedUrl.indexOf("/o/") + 3;
-          const pathEnd = decodedUrl.indexOf("?alt=media");
-          const storagePath = decodedUrl.substring(pathStart, pathEnd);
-
-          const fileRef = ref(storage, storagePath)
-          await deleteObject(fileRef)
-          console.log("PDF físico de lote eliminado de Storage con éxito.");
-        } catch (storageErr) {
-          console.warn("No se pudo eliminar el archivo físico de lote de Storage:", storageErr)
-        }
+        await deleteReportFromStorage(targetBatch.pdfUrl)
       }
 
       await deleteDoc(doc(db, "batch_operations", batchToDelete))
