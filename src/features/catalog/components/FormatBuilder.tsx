@@ -5,14 +5,16 @@ import {
   Plus, Trash2, ChevronUp, ChevronDown,
   AlignLeft, Hash, List, BookOpen, Minus,
   GripVertical, Settings2, Eye, EyeOff, Calculator,
+  Filter,
 } from "lucide-react"
 import type {
   CustomFormatTemplate, FormatRow, FormatColumn,
-  EmptyRow, HeaderRow, TestRow, SimpleRow,
+  EmptyRow, HeaderRow, TestRow, SimpleRow, RowCondition,
 } from "@/shared/types"
 import DropdownOptionsEditor from "./DropdownOptionsEditor"
 import FormatPreview from "./FormatPreview"
 import ReferenceValuesEditor from "./ReferenceValuesEditor"
+import { getAllAvailableColumns, findColumnById } from "@/shared/lib/formatConditions"
 
 interface FormatBuilderProps {
   value: CustomFormatTemplate
@@ -294,18 +296,144 @@ function ColumnEditor({ col, colIndex, colCount, onUpdate, onRemove, onMove }: C
   )
 }
 
+// ─── Row Condition Editor ──────────────────────────────────────────────────
+interface RowConditionEditorProps {
+  condition?: RowCondition
+  template: CustomFormatTemplate
+  currentRowId: string
+  onChange: (condition: RowCondition | undefined) => void
+}
+
+function RowConditionEditor({ condition, template, currentRowId, onChange }: RowConditionEditorProps) {
+  const availableCols = getAllAvailableColumns(template).filter(c => c.rowId !== currentRowId)
+
+  const selectedColMeta = condition ? findColumnById(template, condition.dependsOnColId) : null
+  const selectedCol = selectedColMeta?.column
+
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
+          <Filter className="h-3.5 w-3.5" />
+          <span>Regla de Visibilidad Condicional</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(undefined)}
+          className="text-xs text-red-400/70 hover:text-red-400 transition"
+          title="Eliminar condición"
+        >
+          Quitar regla
+        </button>
+      </div>
+
+      {availableCols.length === 0 ? (
+        <p className="text-xs text-white/40 italic">
+          No hay otras columnas en el formato para usar como disparador. Agrega primero una fila con columna (ej: desplegable).
+        </p>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {/* Columna disparadora */}
+          <div>
+            <label className="text-[10px] text-white/50 block mb-1">Si la columna:</label>
+            <select
+              value={condition?.dependsOnColId ?? ""}
+              onChange={(e) => {
+                const targetColId = e.target.value
+                const colMeta = findColumnById(template, targetColId)
+                onChange({
+                  dependsOnColId: targetColId,
+                  operator: condition?.operator || "equals",
+                  value: colMeta?.column.options?.[0] || "",
+                })
+              }}
+              className="w-full rounded-lg border border-white/10 bg-surface-900 px-2.5 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            >
+              {availableCols.map((c) => (
+                <option key={c.column.id} value={c.column.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Operador */}
+          <div>
+            <label className="text-[10px] text-white/50 block mb-1">Condición:</label>
+            <select
+              value={condition?.operator ?? "equals"}
+              onChange={(e) => {
+                onChange({
+                  dependsOnColId: condition?.dependsOnColId || availableCols[0].column.id,
+                  operator: e.target.value as any,
+                  value: condition?.value ?? "",
+                })
+              }}
+              className="w-full rounded-lg border border-white/10 bg-surface-900 px-2.5 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            >
+              <option value="equals">Es igual a</option>
+              <option value="not_equals">Es diferente de</option>
+              <option value="is_not_empty">Tiene algún valor (no vacío)</option>
+              <option value="is_empty">Está vacío</option>
+            </select>
+          </div>
+
+          {/* Valor esperado */}
+          {(condition?.operator === "equals" || condition?.operator === "not_equals") && (
+            <div>
+              <label className="text-[10px] text-white/50 block mb-1">Valor esperado:</label>
+              {selectedCol?.type === "select" && selectedCol.options && selectedCol.options.length > 0 ? (
+                <select
+                  value={condition?.value ?? ""}
+                  onChange={(e) => {
+                    onChange({
+                      ...condition!,
+                      value: e.target.value,
+                    })
+                  }}
+                  className="w-full rounded-lg border border-white/10 bg-surface-900 px-2.5 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+                >
+                  {selectedCol.options.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={condition?.value ?? ""}
+                  onChange={(e) => {
+                    onChange({
+                      ...condition!,
+                      value: e.target.value,
+                    })
+                  }}
+                  placeholder="Ej: Se observan"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-white/30 focus:border-amber-500 focus:outline-none"
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Row Editor ───────────────────────────────────────────────────────────────
 interface RowEditorProps {
   row: FormatRow
   rowIndex: number
   rowCount: number
+  template: CustomFormatTemplate
   onUpdate: (row: FormatRow) => void
   onRemove: () => void
   onMove: (dir: "up" | "down") => void
   onCopyColumnsFromAbove?: () => void
 }
 
-function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopyColumnsFromAbove }: RowEditorProps) {
+function RowEditor({ row, rowIndex, rowCount, template, onUpdate, onRemove, onMove, onCopyColumnsFromAbove }: RowEditorProps) {
   const ROW_META: Record<string, { label: string; color: string }> = {
     empty: { label: "Fila Vacía", color: "border-white/20 text-white/40" },
     header: { label: "Membrete", color: "border-yellow-500/40 text-yellow-400" },
@@ -344,11 +472,24 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopy
   return (
     <div className="rounded-xl border border-white/10 bg-surface-900 overflow-hidden">
       {/* Row header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3 border-b border-white/5">
         <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${meta.color}`}>
           {meta.label}
         </span>
         <span className="text-xs text-white/30">#{rowIndex + 1}</span>
+
+        {row.hideInPdf && (
+          <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-300">
+            Solo Captura (No sale en PDF)
+          </span>
+        )}
+
+        {row.condition?.dependsOnColId && (
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+            Condicional
+          </span>
+        )}
+
         <div className="flex-1" />
         <button
           type="button"
@@ -379,7 +520,7 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopy
       </div>
 
       {/* Row body */}
-      <div className="px-4 py-3">
+      <div className="px-4 py-3 space-y-3">
         {row.type === "empty" && (
           <div className="flex items-center gap-2 text-sm text-white/30 italic">
             <Minus className="h-4 w-4" />
@@ -392,7 +533,7 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopy
             type="text"
             value={row.text}
             onChange={(e) => onUpdate({ ...row, text: e.target.value })}
-            placeholder="Texto del membrete, ej: Análisis Macroscópico:"
+            placeholder="Texto del membrete, ej: DIFERENCIAL LEUCOCITARIO:"
             className="w-full rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400"
           />
         )}
@@ -450,6 +591,56 @@ function RowEditor({ row, rowIndex, rowCount, onUpdate, onRemove, onMove, onCopy
             </div>
           </div>
         )}
+
+        {/* Row Settings: Ocultar en PDF y Condición de Visibilidad */}
+        <div className="mt-3 border-t border-white/5 pt-3 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={row.hideInPdf ?? false}
+                onChange={(e) => onUpdate({ ...row, hideInPdf: e.target.checked })}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 text-purple-500 focus:ring-purple-500"
+              />
+              <span className="text-xs text-white/70">
+                Ocultar en Reporte PDF <span className="text-white/40">(Solo para captura en pantalla)</span>
+              </span>
+            </label>
+
+            {!row.condition && (
+              <button
+                type="button"
+                onClick={() => {
+                  const available = getAllAvailableColumns(template).filter(c => c.rowId !== row.id)
+                  if (available.length > 0) {
+                    const first = available[0].column
+                    onUpdate({
+                      ...row,
+                      condition: {
+                        dependsOnColId: first.id,
+                        operator: "equals",
+                        value: first.options?.[0] || "",
+                      }
+                    })
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 transition"
+              >
+                <Filter className="h-3.5 w-3.5" />
+                <span>Condicionar Visibilidad</span>
+              </button>
+            )}
+          </div>
+
+          {row.condition && (
+            <RowConditionEditor
+              condition={row.condition}
+              template={template}
+              currentRowId={row.id}
+              onChange={(cond) => onUpdate({ ...row, condition: cond })}
+            />
+          )}
+        </div>
       </div>
     </div>
   )
@@ -566,6 +757,7 @@ export default function FormatBuilder({ value, onChange, formatName: _formatName
                 row={row}
                 rowIndex={i}
                 rowCount={rows.length}
+                template={value}
                 onUpdate={(r) => updateRow(i, r)}
                 onRemove={() => removeRow(i)}
                 onMove={(dir) => moveRow(i, dir)}
