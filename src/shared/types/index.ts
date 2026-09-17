@@ -121,27 +121,41 @@ export interface FormatColumn {
   }[]
 }
 
+export interface RowCondition {
+  dependsOnColId: string
+  operator: "equals" | "not_equals" | "is_not_empty" | "is_empty"
+  value?: string
+}
+
 export interface EmptyRow {
   id: string
   type: "empty"
+  condition?: RowCondition
+  hideInPdf?: boolean
 }
 
 export interface HeaderRow {
   id: string
   type: "header"
   text: string
+  condition?: RowCondition
+  hideInPdf?: boolean
 }
 
 export interface TestRow {
   id: string
   type: "test"
   columns: FormatColumn[]
+  condition?: RowCondition
+  hideInPdf?: boolean
 }
 
 export interface SimpleRow {
   id: string
   type: "simple"
   columns: FormatColumn[]
+  condition?: RowCondition
+  hideInPdf?: boolean
 }
 
 export type FormatRow = EmptyRow | HeaderRow | TestRow | SimpleRow

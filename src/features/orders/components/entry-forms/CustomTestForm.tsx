@@ -1,5 +1,6 @@
 import type { CustomTestEntry, FormatColumn } from "@/shared/types"
 import { useEffect, useRef } from "react"
+import { checkRowVisibility } from "@/shared/lib/formatConditions"
 
 
 interface CustomTestFormProps {
@@ -294,6 +295,9 @@ export default function CustomTestForm({ entry, onChange, patient, onNext }: Cus
 
   if (customTemplate?.rows) {
     customTemplate.rows.forEach((row: any) => {
+      // Si la fila no cumple su condición con los datos actuales, no entra en el orden de foco
+      if (!checkRowVisibility(row, data, customTemplate)) return
+
       if (row.columns && (row.type === "test" || row.type === "simple")) {
         row.columns.forEach((col: any) => {
           // Filtramos exactamente igual que en tu JSX (Evitamos fijos, fórmulas o encabezados)
@@ -372,8 +376,22 @@ export default function CustomTestForm({ entry, onChange, patient, onNext }: Cus
   return (
     <div className="space-y-3">
       {customTemplate.rows.map((row) => {
+        // Evaluación de visibilidad condicional
+        if (!checkRowVisibility(row, data, customTemplate)) {
+          return null
+        }
+
         if (row.type === "empty") return <div key={row.id} className="h-3" />
-        if (row.type === "header") return <div key={row.id} className="border-b border-white/10 pb-1 pt-2 text-sm font-semibold text-white/80">{row.text}</div>
+        if (row.type === "header") return (
+          <div key={row.id} className="flex items-center justify-between border-b border-white/10 pb-1 pt-2 text-sm font-semibold text-white/80">
+            <span>{row.text}</span>
+            {row.hideInPdf && (
+              <span className="text-[10px] font-normal text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md">
+                Control interno (no sale en PDF)
+              </span>
+            )}
+          </div>
+        )
 
         // ── Test row ──────────────────────────────────────
         if (row.type === "test" && row.columns.length > 0) {
@@ -382,7 +400,15 @@ export default function CustomTestForm({ entry, onChange, patient, onNext }: Cus
           return (
             <div
               key={row.id}
-              className="grid gap-3"
+              className={`rounded-xl ${row.hideInPdf ? "border border-purple-500/30 bg-purple-500/5 p-3" : ""}`}
+            >
+              {row.hideInPdf && (
+                <div className="mb-2 text-[10px] font-semibold text-purple-300 uppercase tracking-wider">
+                  ⚙ Opción de Control (Solo visible en pantalla):
+                </div>
+              )}
+              <div
+                className="grid gap-3"
               style={{ gridTemplateColumns: row.columns.map((c) => `${c.width ?? 1}fr`).join(" ") }}
             >
               {row.columns.map((col) => {
@@ -429,6 +455,7 @@ export default function CustomTestForm({ entry, onChange, patient, onNext }: Cus
                   </div>
                 )
               })}
+              </div>
             </div>
           )
         }
@@ -442,7 +469,11 @@ export default function CustomTestForm({ entry, onChange, patient, onNext }: Cus
           return (
             <div
               key={row.id}
-              className={`grid gap-3 items-center py-2 px-3 rounded-xl border border-white/5 ${isOdd ? "bg-white/[0.04]" : "bg-white/[0.01]"}`}
+              className={`grid gap-3 items-center py-2 px-3 rounded-xl border ${
+                row.hideInPdf
+                  ? "border-purple-500/30 bg-purple-500/5"
+                  : `border-white/5 ${isOdd ? "bg-white/[0.04]" : "bg-white/[0.01]"}`
+              }`}
               style={{ gridTemplateColumns: row.columns.map((c) => `${c.width ?? 1}fr`).join(" ") }}
             >
               {row.columns.map((col) => {

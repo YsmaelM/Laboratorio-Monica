@@ -1,6 +1,7 @@
 import { View, Text } from "@react-pdf/renderer"
 import { s } from "../../styles/pdfStyles"
 import type { CustomTestEntry, HeaderRow, TestRow, SimpleRow, EmptyRow } from "@/shared/types"
+import { checkRowVisibility } from "@/shared/lib/formatConditions"
 
 interface CustomPdfSectionProps {
   entry: CustomTestEntry
@@ -161,10 +162,15 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
     emptyRows: EmptyRow[]
   }
 
+  const printableRows = customTemplate.rows.filter((row) => {
+    if (row.hideInPdf) return false
+    return checkRowVisibility(row, data, customTemplate)
+  })
+
   const blocks: Block[] = []
   let current: Block = { sectionHeader: null, testRow: null, simpleRows: [], emptyRows: [] }
 
-  for (const row of customTemplate.rows) {
+  for (const row of printableRows) {
     if (row.type === "header") {
       if (current.testRow || current.sectionHeader || current.simpleRows.length > 0) {
         blocks.push(current)
