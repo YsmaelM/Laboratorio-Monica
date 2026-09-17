@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
-import { CheckCircle2, FileText, Loader2, ExternalLink, Download, X } from "lucide-react"
+import { CheckCircle2, FileText, Loader2, ExternalLink, X } from "lucide-react"
 import type { Patient, TestEntry, OrderResult } from "@/shared/types"
 import Step1Patient from "../components/workflow/Step1_Patient"
 import Step2TestSelection from "../components/workflow/Step2_TestSelection"
@@ -179,26 +179,15 @@ export default function OrderWorkflowPage() {
 
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
               {generatedPdfUrl ? (
-                <>
-                  <a
-                    href={generatedPdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-blue-500"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Abrir PDF
-                  </a>
-
-                  <a
-                    href={generatedPdfUrl}
-                    download={lastFileName || "reporte.pdf"}
-                    className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg transition hover:bg-emerald-500"
-                  >
-                    <Download className="h-4 w-4" />
-                    Descargar
-                  </a>
-                </>
+                <a
+                  href={generatedPdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-blue-500"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Abrir PDF
+                </a>
               ) : (
                 <button
                   onClick={handleGenerateClick}
