@@ -20,6 +20,10 @@ export const supabase = createClient(
  * y cuenta con fallback a subida directa si la Edge Function no responde.
  */
 export async function uploadReportSecurely(path: string, blob: Blob, filename?: string): Promise<string> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY no detectadas. En Vercel debes hacer un 'Redeploy' tras agregar las variables de entorno para que se apliquen al bundle.")
+  }
+
   const currentUser = auth.currentUser
   const token = currentUser ? await currentUser.getIdToken() : ""
 
@@ -27,10 +31,33 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
   formData.append("file", blob, filename || "report.pdf")
   formData.append("path", path)
 
-  const functionUrl = `${supabaseUrl}/functions/v1/upload-report`
   let functionError: Error | null = null
 
+  // 1. Invocar mediante SDK oficial de Supabase
   try {
+    const { data, error } = await supabase.functions.invoke("upload-report", {
+      body: formData,
+      headers: {
+        ...(token ? { "x-firebase-token": token } : {}),
+      },
+    })
+
+    if (!error && data?.publicUrl) {
+      return data.publicUrl
+    }
+
+    if (error) {
+      functionError = new Error(error.message || "Error al subir reporte a Edge Function")
+      console.warn("supabase.functions.invoke error:", error)
+    }
+  } catch (invokeErr: any) {
+    functionError = invokeErr
+    console.warn("Excepción al invocar Edge Function:", invokeErr)
+  }
+
+  // 2. Fallback con llamada fetch directa al endpoint de la función
+  try {
+    const functionUrl = `${supabaseUrl}/functions/v1/upload-report`
     const res = await fetch(functionUrl, {
       method: "POST",
       headers: {
@@ -49,16 +76,15 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
     } else {
       const errData = await res.json().catch(() => ({}))
       functionError = new Error(errData.error || errData.message || `HTTP ${res.status} en Edge Function`)
-      console.warn("Edge Function de subida falló:", functionError.message)
+      console.warn("Fetch fallback falló:", functionError.message)
     }
-  } catch (err: any) {
-    functionError = err
-    console.warn("Error de conexión con la Edge Function:", err)
+  } catch (fetchErr: any) {
+    functionError = fetchErr
+    console.warn("Fetch fallback excepción:", fetchErr)
   }
 
-  // Fallback: Intento de subida directa a Supabase Storage con cliente JS
+  // 3. Fallback directo a Supabase Storage con cliente JS
   try {
-    console.log("Intentando subida directa de respaldo a Supabase Storage:", path)
     const { error: directUploadError } = await supabase.storage
       .from("reports")
       .upload(path, blob, {
@@ -73,11 +99,8 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
         .getPublicUrl(path)
 
       if (publicUrl) {
-        console.log("Subida directa exitosa a Supabase Storage:", publicUrl)
         return publicUrl
       }
-    } else {
-      console.warn("Subida directa a Supabase Storage falló:", directUploadError.message)
     }
   } catch (directErr) {
     console.warn("Excepción en subida directa a Supabase Storage:", directErr)
