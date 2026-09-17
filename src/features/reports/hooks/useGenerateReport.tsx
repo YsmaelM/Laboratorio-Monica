@@ -184,7 +184,7 @@ export function useGenerateReport() {
       setLastFileName(downloadName)
 
       const patientFolder = order.patientId || order.patientSnapshot?.patientId || "pacientes"
-      const fileName = `${patientFolder}/${downloadName}`
+      const fileName = `${patientFolder}/${orderId}/${downloadName}`
 
       try {
         // 5. Subir a Supabase Storage mediante Edge Function Segura (con fallback directo)

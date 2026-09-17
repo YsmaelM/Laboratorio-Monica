@@ -98,7 +98,7 @@ serve(async (req) => {
       .from("reports")
       .upload(filePath, uint8Array, {
         contentType: "application/pdf",
-        cacheControl: "3600",
+        cacheControl: "0",
         upsert: true,
       })
 

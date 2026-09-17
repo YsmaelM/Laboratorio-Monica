@@ -89,7 +89,7 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
       .from("reports")
       .upload(path, blob, {
         contentType: "application/pdf",
-        cacheControl: "3600",
+        cacheControl: "0",
         upsert: true,
       })
 
