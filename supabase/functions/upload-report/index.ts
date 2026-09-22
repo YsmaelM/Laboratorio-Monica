@@ -115,7 +115,9 @@ serve(async (req) => {
       .from("reports")
       .getPublicUrl(filePath)
 
-    return new Response(JSON.stringify({ publicUrl }), {
+    const finalUrl = `${publicUrl}?t=${Date.now()}`
+
+    return new Response(JSON.stringify({ publicUrl: finalUrl }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })

@@ -8,6 +8,8 @@ interface Step3DataEntryProps {
   patient: Patient
   tests: TestEntry[]
   orderId?: string | null
+  referringDoctor?: string
+  onReferringDoctorChange?: (doctor: string) => void
   onTestsChange: (tests: TestEntry[]) => void
   onBack: () => void
   onOrderSaved: (orderId: string) => void
@@ -60,13 +62,23 @@ export default function Step3DataEntry({
   patient,
   tests,
   orderId,
+  referringDoctor: referringDoctorProp,
+  onReferringDoctorChange,
   onTestsChange,
   onBack,
   onOrderSaved,
 }: Step3DataEntryProps) {
   const { saveOrder, loading, error } = useOrderMutation()
   const [expandedIdx, setExpandedIdx] = useState<number>(0)
-  const [referringDoctor, setReferringDoctor] = useState("")
+  const [internalDoctor, setInternalDoctor] = useState(referringDoctorProp || "")
+  const referringDoctor = referringDoctorProp !== undefined ? referringDoctorProp : internalDoctor
+
+  const handleDoctorChange = (val: string) => {
+    setInternalDoctor(val)
+    if (onReferringDoctorChange) {
+      onReferringDoctorChange(val)
+    }
+  }
   const [showWarningModal, setShowWarningModal] = useState(false)
 
   const handleEntryChange = (idx: number, updated: TestEntry) => {
@@ -129,7 +141,7 @@ export default function Step3DataEntry({
         <input
           type="text"
           value={referringDoctor}
-          onChange={(e) => setReferringDoctor(e.target.value)}
+          onChange={(e) => handleDoctorChange(e.target.value)}
           placeholder="Nombre del médico que refiere"
           className="w-full max-w-md rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/20 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />

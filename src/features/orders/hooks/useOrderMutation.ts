@@ -69,9 +69,13 @@ export function useOrderMutation() {
       const cleanedData = cleanUndefined(orderData)
 
       if (orderId) {
-        // Update existing order
+        // Update existing order: preserve original createdAt, createdBy and orderDate
+        const { createdAt, createdBy, orderDate, ...updateData } = cleanedData
+        if (referringDoctor !== undefined) {
+          updateData.referringDoctor = referringDoctor.trim()
+        }
         await setDoc(doc(db, "orders_results", orderId), {
-          ...cleanedData,
+          ...updateData,
           updatedAt: serverTimestamp(),
         }, { merge: true })
         return orderId

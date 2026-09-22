@@ -188,7 +188,8 @@ export function useGenerateReport() {
 
       try {
         // 5. Subir a Supabase Storage mediante Edge Function Segura (con fallback directo)
-        const pdfUrl = await uploadReportSecurely(fileName, blob, downloadName)
+        const rawPdfUrl = await uploadReportSecurely(fileName, blob, downloadName)
+        const pdfUrl = rawPdfUrl.includes("?t=") ? rawPdfUrl : `${rawPdfUrl}?t=${Date.now()}`
 
         // 6. Actualizar Orden en Firestore con la URL persistente de Supabase
         await updateDoc(doc(db, "orders_results", orderId), {

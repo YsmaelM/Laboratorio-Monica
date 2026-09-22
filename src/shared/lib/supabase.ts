@@ -14,6 +14,12 @@ export const supabase = createClient(
   supabaseAnonKey || "placeholder"
 )
 
+function withCacheBuster(url: string): string {
+  if (!url) return url
+  const cleanUrl = url.split("?")[0]
+  return `${cleanUrl}?t=${Date.now()}`
+}
+
 /**
  * Sube un reporte PDF a Supabase Storage.
  * Utiliza la Edge Function 'upload-report' con autenticación dual (Supabase Gateway + Firebase Token)
@@ -43,7 +49,7 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
     })
 
     if (!error && data?.publicUrl) {
-      return data.publicUrl
+      return withCacheBuster(data.publicUrl)
     }
 
     if (error) {
@@ -71,7 +77,7 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
     if (res.ok) {
       const data = await res.json()
       if (data.publicUrl) {
-        return data.publicUrl
+        return withCacheBuster(data.publicUrl)
       }
     } else {
       const errData = await res.json().catch(() => ({}))
@@ -99,7 +105,7 @@ export async function uploadReportSecurely(path: string, blob: Blob, filename?: 
         .getPublicUrl(path)
 
       if (publicUrl) {
-        return publicUrl
+        return withCacheBuster(publicUrl)
       }
     }
   } catch (directErr) {

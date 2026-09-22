@@ -137,7 +137,8 @@ export function useGenerateBatchReport() {
           const downloadName = `OPERATIVO_${cleanBatchName}_${dateStr}.pdf`
           const fileName = `batch_reports/${batchId}/${downloadName}`
 
-          const pdfUrl = await uploadReportSecurely(fileName, blob, downloadName)
+          const rawPdfUrl = await uploadReportSecurely(fileName, blob, downloadName)
+          const pdfUrl = rawPdfUrl.includes("?t=") ? rawPdfUrl : `${rawPdfUrl}?t=${Date.now()}`
 
           // Guardar URL en el documento del batch
           await updateDoc(doc(db, "batch_operations", batchId), {

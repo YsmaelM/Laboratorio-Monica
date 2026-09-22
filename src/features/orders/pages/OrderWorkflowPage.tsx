@@ -18,6 +18,7 @@ export default function OrderWorkflowPage() {
   const [step, setStep] = useState<1 | 2 | 3 | "done">(1)
   const [patient, setPatient] = useState<Patient | null>(null)
   const [selectedTests, setSelectedTests] = useState<TestEntry[]>([])
+  const [referringDoctor, setReferringDoctor] = useState("")
   const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null)
 
@@ -55,6 +56,8 @@ export default function OrderWorkflowPage() {
 
       setSelectedTests(order.tests)
       setSavedOrderId(order.id)
+      setReferringDoctor(order.referringDoctor || "")
+      setGeneratedPdfUrl(null)
       setStep(3) // Jump directly to data entry
     } catch (error) {
       console.error("Error loading order for edit:", error)
@@ -66,6 +69,7 @@ export default function OrderWorkflowPage() {
 
   const handleOrderSaved = (orderId: string) => {
     setSavedOrderId(orderId)
+    setGeneratedPdfUrl(null)
     setStep("done")
   }
 
@@ -73,6 +77,7 @@ export default function OrderWorkflowPage() {
     setStep(1)
     setPatient(null)
     setSelectedTests([])
+    setReferringDoctor("")
     setSavedOrderId(null)
     setGeneratedPdfUrl(null)
     setShowSignatureModal(false)
@@ -156,6 +161,8 @@ export default function OrderWorkflowPage() {
             patient={patient}
             tests={selectedTests}
             orderId={savedOrderId}
+            referringDoctor={referringDoctor}
+            onReferringDoctorChange={setReferringDoctor}
             onTestsChange={setSelectedTests}
             onBack={() => setStep(2)}
             onOrderSaved={handleOrderSaved}
@@ -179,15 +186,25 @@ export default function OrderWorkflowPage() {
 
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
               {generatedPdfUrl ? (
-                <a
-                  href={generatedPdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-blue-500"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Abrir PDF
-                </a>
+                <>
+                  <a
+                    href={generatedPdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-medium text-white shadow-glow-primary transition hover:bg-blue-500"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Abrir PDF
+                  </a>
+                  <button
+                    onClick={handleGenerateClick}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-5 py-2.5 text-sm font-medium text-blue-400 transition hover:bg-blue-500/20 disabled:opacity-50"
+                  >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                    {isGenerating ? "Regenerando..." : "Regenerar PDF"}
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={handleGenerateClick}
@@ -198,6 +215,16 @@ export default function OrderWorkflowPage() {
                   {isGenerating ? "Generando..." : "Generar Reporte PDF"}
                 </button>
               )}
+
+              <button
+                onClick={() => {
+                  setGeneratedPdfUrl(null)
+                  setStep(3)
+                }}
+                className="rounded-xl border border-white/10 px-6 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
+              >
+                Modificar Resultados
+              </button>
 
               <button
                 onClick={handleNewOrder}
