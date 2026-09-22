@@ -18,6 +18,7 @@ const getFormRefText = (col: any, patient: any) => {
   if (col && Array.isArray(col.groups) && col.groups.length > 0) {
     if (patient) {
       const pAge = patient.age ?? 0
+      const pSex = (patient.sex || "").toUpperCase()
 
       // RADAR: Filtramos los grupos donde encaja la edad y sexo del paciente
       const matchedGroups = col.groups.filter((g: any) => {
