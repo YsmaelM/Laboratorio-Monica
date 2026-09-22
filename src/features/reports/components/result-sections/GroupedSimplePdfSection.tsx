@@ -65,11 +65,12 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
         if (data.refValue && typeof data.refValue !== "string") {
           const ref = data.refValue as ReferenceValue
 
-          if (ref.type === "group" && Array.isArray(ref.groups) && patient) {
-            const pAge = patient.age ?? 0;
-            const pSex = (patient.sex || "").toUpperCase();
+          if (ref.type === "group" && Array.isArray(ref.groups)) {
+            const pAge = patient?.age ?? 0;
+            const pSex = (patient?.sex || "").toUpperCase();
 
-            const matchedGroup = ref.groups.find((g: any) => {
+            const matchedGroups = ref.groups.filter((g: any) => {
+              if (!patient) return true;
               const minA = g.minAge !== undefined ? g.minAge : 0;
               const maxA = g.maxAge !== undefined ? g.maxAge : 120;
               const ageMatches = pAge >= minA && pAge < maxA;
@@ -84,9 +85,29 @@ export function GroupedSimplePdfSection({ entries, patient }: GroupedSimplePdfSe
               return ageMatches && sexMatches;
             });
 
-            if (matchedGroup) {
-              targetMin = matchedGroup.min;
-              targetMax = matchedGroup.max;
+            if (matchedGroups.length === 1) {
+              targetMin = matchedGroups[0].min;
+              targetMax = matchedGroups[0].max;
+            } else if (matchedGroups.length > 1) {
+              const val = Number(data.result);
+              if (data.result !== undefined && data.result !== "" && !isNaN(val)) {
+                // Comprobar si entra en ALGUNA de las fases clínicas
+                const inAnyGroup = matchedGroups.some((g: any) => {
+                  const gMin = g.min !== undefined ? Number(g.min) : -Infinity;
+                  const gMax = g.max !== undefined ? Number(g.max) : Infinity;
+                  return val >= gMin && val <= gMax;
+                });
+
+                if (!inAnyGroup) {
+                  const allMins = matchedGroups.map((g: any) => g.min).filter((v: any) => v !== undefined).map(Number);
+                  const allMaxs = matchedGroups.map((g: any) => g.max).filter((v: any) => v !== undefined).map(Number);
+                  const globalMin = allMins.length > 0 ? Math.min(...allMins) : undefined;
+                  const globalMax = allMaxs.length > 0 ? Math.max(...allMaxs) : undefined;
+
+                  if (globalMin !== undefined && val < globalMin) isLow = true;
+                  if (globalMax !== undefined && val > globalMax) isHigh = true;
+                }
+              }
             }
           } else {
             targetMin = ref.min;

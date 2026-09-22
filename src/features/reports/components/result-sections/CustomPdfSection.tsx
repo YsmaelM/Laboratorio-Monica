@@ -98,10 +98,11 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
     const activeGroups = refColumn?.groups || currentColumn?.groups || refColumn?.referenceValue?.groups
     let targetMin = refColumn?.min ?? currentColumn?.min
     let targetMax = refColumn?.max ?? currentColumn?.max
-    if (Array.isArray(activeGroups) && patient) {
-      const pAge = patient.age ?? 0
-      const pSex = (patient.sex || "").toUpperCase()
-      const matchedGroup = activeGroups.find((g: any) => {
+    if (Array.isArray(activeGroups)) {
+      const pAge = patient?.age ?? 0
+      const pSex = (patient?.sex || "").toUpperCase()
+      const matchedGroups = activeGroups.filter((g: any) => {
+        if (!patient) return true
         const minA = g.minAge !== undefined ? g.minAge : 0
         const maxA = g.maxAge !== undefined ? g.maxAge : 120
         const ageMatches = pAge >= minA && pAge < maxA
@@ -111,7 +112,27 @@ export function CustomPdfSection({ entry, patient, showTitle }: CustomPdfSection
         else if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower.includes("dama")) sexMatches = pSex === "F" || pSex === "FEMENINO"
         return ageMatches && sexMatches
       })
-      if (matchedGroup) { targetMin = matchedGroup.min; targetMax = matchedGroup.max }
+
+      if (matchedGroups.length === 1) {
+        targetMin = matchedGroups[0].min
+        targetMax = matchedGroups[0].max
+      } else if (matchedGroups.length > 1) {
+        const inAnyGroup = matchedGroups.some((g: any) => {
+          const gMin = g.min !== undefined ? Number(g.min) : -Infinity
+          const gMax = g.max !== undefined ? Number(g.max) : Infinity
+          return numValue >= gMin && numValue <= gMax
+        })
+
+        if (!inAnyGroup) {
+          const allMins = matchedGroups.map((g: any) => g.min).filter((v: any) => v !== undefined).map(Number)
+          const allMaxs = matchedGroups.map((g: any) => g.max).filter((v: any) => v !== undefined).map(Number)
+          const globalMin = allMins.length > 0 ? Math.min(...allMins) : undefined
+          const globalMax = allMaxs.length > 0 ? Math.max(...allMaxs) : undefined
+          if (globalMin !== undefined && numValue < globalMin) isLow = true
+          if (globalMax !== undefined && numValue > globalMax) isHigh = true
+        }
+        return { isHigh, isLow }
+      }
     }
     if (targetMin !== undefined && numValue < Number(targetMin)) isLow = true
     if (targetMax !== undefined && numValue > Number(targetMax)) isHigh = true

@@ -19,19 +19,33 @@ const getFormRefText = (col: any, patient: any) => {
     if (patient) {
       const pAge = patient.age ?? 0
 
-      // RADAR MATEMÁTICO: Buscamos el grupo exacto donde encaja la edad del paciente
-      const matchedGroup = col.groups.find((g: any) => {
+      // RADAR: Filtramos los grupos donde encaja la edad y sexo del paciente
+      const matchedGroups = col.groups.filter((g: any) => {
         const minA = g.minAge !== undefined ? g.minAge : 0
         const maxA = g.maxAge !== undefined ? g.maxAge : 120
+        const ageMatches = pAge >= minA && pAge < maxA
 
-        // Evaluamos si la edad real del paciente cae dentro del tramo (Desde minAge hasta MaxAge)
-        return pAge >= minA && pAge < maxA
+        const nameLower = (g.name || "").toLowerCase()
+        let sexMatches = true
+        if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower.includes("varon")) {
+          sexMatches = pSex === "M" || pSex === "MASCULINO"
+        } else if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower.includes("dama")) {
+          sexMatches = pSex === "F" || pSex === "FEMENINO"
+        }
+        return ageMatches && sexMatches
       })
 
-      if (matchedGroup) {
-        return matchedGroup.type === "two_point"
-          ? `${matchedGroup.min ?? 0} - ${matchedGroup.max ?? 0}`
-          : `Hasta ${matchedGroup.max ?? 0}`
+      if (matchedGroups.length === 1) {
+        const g = matchedGroups[0]
+        return g.type === "two_point"
+          ? `${g.min ?? 0} - ${g.max ?? 0}`
+          : g.type === "desde"
+          ? `Mín: ${g.min ?? 0}`
+          : `Hasta ${g.max ?? 0}`
+      } else if (matchedGroups.length > 1) {
+        return matchedGroups
+          .map((g: any) => `${g.name}: ${g.type === "two_point" ? `${g.min ?? 0} - ${g.max ?? 0}` : g.type === "desde" ? `Mín: ${g.min ?? 0}` : `Hasta ${g.max ?? 0}`}`)
+          .join(" \n ")
       }
     }
     // Fallback si no hay paciente en pantalla: listamos los rangos de todos los grupos numéricos
@@ -160,16 +174,45 @@ function CellInput({
       let targetMin = refColumn.min
       let targetMax = refColumn.max
 
-      if (Array.isArray(refColumn.groups) && patient) {
-        const pAge = patient.age ?? 0
-        const matchedGroup = refColumn.groups.find((g: any) => {
+      if (Array.isArray(refColumn.groups)) {
+        const pAge = patient?.age ?? 0
+        const pSex = (patient?.sex || "").toUpperCase()
+        const matchedGroups = refColumn.groups.filter((g: any) => {
+          if (!patient) return true
           const minA = g.minAge !== undefined ? g.minAge : 0
           const maxA = g.maxAge !== undefined ? g.maxAge : 120
-          return pAge >= minA && pAge < maxA
+          const ageMatches = pAge >= minA && pAge < maxA
+
+          const nameLower = (g.name || "").toLowerCase()
+          let sexMatches = true
+          if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower.includes("varon")) {
+            sexMatches = pSex === "M" || pSex === "MASCULINO"
+          } else if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower.includes("dama")) {
+            sexMatches = pSex === "F" || pSex === "FEMENINO"
+          }
+          return ageMatches && sexMatches
         })
-        if (matchedGroup) {
-          targetMin = matchedGroup.min
-          targetMax = matchedGroup.max
+
+        if (matchedGroups.length === 1) {
+          targetMin = matchedGroups[0].min
+          targetMax = matchedGroups[0].max
+        } else if (matchedGroups.length > 1) {
+          const inAnyGroup = matchedGroups.some((g: any) => {
+            const gMin = g.min !== undefined ? Number(g.min) : -Infinity
+            const gMax = g.max !== undefined ? Number(g.max) : Infinity
+            return numValue >= gMin && numValue <= gMax
+          })
+
+          if (inAnyGroup) {
+            formulaAlertClass = "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
+            targetMin = undefined
+            targetMax = undefined
+          } else {
+            const allMins = matchedGroups.map((g: any) => g.min).filter((v: any) => v !== undefined).map(Number)
+            const allMaxs = matchedGroups.map((g: any) => g.max).filter((v: any) => v !== undefined).map(Number)
+            targetMin = allMins.length > 0 ? Math.min(...allMins) : undefined
+            targetMax = allMaxs.length > 0 ? Math.max(...allMaxs) : undefined
+          }
         }
       }
 
@@ -227,17 +270,45 @@ function CellInput({
       let targetMax = refColumn.max
 
       // Evaluamos refType o verificamos directamente la existencia del arreglo de grupos
-      if (Array.isArray(refColumn.groups) && patient) {
-        const pAge = patient.age ?? 0
-        // Añadimos el operador "?" por seguridad
-        const matchedGroup = refColumn.groups?.find((g: any) => {
+      if (Array.isArray(refColumn.groups)) {
+        const pAge = patient?.age ?? 0
+        const pSex = (patient?.sex || "").toUpperCase()
+        const matchedGroups = refColumn.groups.filter((g: any) => {
+          if (!patient) return true
           const minA = g.minAge !== undefined ? g.minAge : 0
           const maxA = g.maxAge !== undefined ? g.maxAge : 120
-          return pAge >= minA && pAge < maxA
+          const ageMatches = pAge >= minA && pAge < maxA
+
+          const nameLower = (g.name || "").toLowerCase()
+          let sexMatches = true
+          if (nameLower.includes("hombre") || nameLower.includes("masculino") || nameLower.includes("varon")) {
+            sexMatches = pSex === "M" || pSex === "MASCULINO"
+          } else if (nameLower.includes("mujer") || nameLower.includes("femenino") || nameLower.includes("dama")) {
+            sexMatches = pSex === "F" || pSex === "FEMENINO"
+          }
+          return ageMatches && sexMatches
         })
-        if (matchedGroup) {
-          targetMin = matchedGroup.min
-          targetMax = matchedGroup.max
+
+        if (matchedGroups.length === 1) {
+          targetMin = matchedGroups[0].min
+          targetMax = matchedGroups[0].max
+        } else if (matchedGroups.length > 1) {
+          const inAnyGroup = matchedGroups.some((g: any) => {
+            const gMin = g.min !== undefined ? Number(g.min) : -Infinity
+            const gMax = g.max !== undefined ? Number(g.max) : Infinity
+            return numValue >= gMin && numValue <= gMax
+          })
+
+          if (inAnyGroup) {
+            borderStyles = "border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500 text-emerald-300"
+            targetMin = undefined
+            targetMax = undefined
+          } else {
+            const allMins = matchedGroups.map((g: any) => g.min).filter((v: any) => v !== undefined).map(Number)
+            const allMaxs = matchedGroups.map((g: any) => g.max).filter((v: any) => v !== undefined).map(Number)
+            targetMin = allMins.length > 0 ? Math.min(...allMins) : undefined
+            targetMax = allMaxs.length > 0 ? Math.max(...allMaxs) : undefined
+          }
         }
       }
 

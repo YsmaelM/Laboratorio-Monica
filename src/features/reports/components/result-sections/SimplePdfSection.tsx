@@ -25,7 +25,21 @@ export function SimplePdfSection({ entry }: SimplePdfSectionProps) {
         }
       } else {
         const ref = data.refValue as any
-        if (ref.min !== undefined && ref.max !== undefined) {
+        if (ref.type === "group" && Array.isArray(ref.groups)) {
+          const inAnyGroup = ref.groups.some((g: any) => {
+            const gMin = g.min !== undefined ? Number(g.min) : -Infinity
+            const gMax = g.max !== undefined ? Number(g.max) : Infinity
+            return val >= gMin && val <= gMax
+          })
+          if (!inAnyGroup) {
+            const allMins = ref.groups.map((g: any) => g.min).filter((v: any) => v !== undefined).map(Number)
+            const allMaxs = ref.groups.map((g: any) => g.max).filter((v: any) => v !== undefined).map(Number)
+            const globalMin = allMins.length > 0 ? Math.min(...allMins) : undefined
+            const globalMax = allMaxs.length > 0 ? Math.max(...allMaxs) : undefined
+            if (globalMin !== undefined && val < globalMin) isLow = true
+            if (globalMax !== undefined && val > globalMax) isHigh = true
+          }
+        } else if (ref.min !== undefined && ref.max !== undefined) {
           if (val < Number(ref.min)) isLow = true
           if (val > Number(ref.max)) isHigh = true
         } else if (ref.max !== undefined) {

@@ -57,16 +57,29 @@ export default function SimpleTestForm({ entry, onChange, patient, onNext }: Sim
     }
 
     if (ref.type === "group" && Array.isArray(ref.groups)) {
+      const numVal = (data.result !== "" && data.result !== undefined && !isNaN(Number(data.result))) ? Number(data.result) : null
+
       return (
         <div className="mt-1 space-y-1 rounded-lg bg-white/5 p-2 border border-white/5 max-h-32 overflow-y-auto scrollbar-thin">
-          {ref.groups.map((g: any, index: number) => (
-            <div key={index} className="flex justify-between text-[11px] border-b border-white/5 pb-1 last:border-0 last:pb-0">
-              <span className="text-white/50 font-normal">{g.name}:</span>
-              <span className="text-white/90 font-medium ml-2">
-                {g.min !== undefined && g.max !== undefined ? `${g.min} - ${g.max}` : g.max}
-              </span>
-            </div>
-          ))}
+          {ref.groups.map((g: any, index: number) => {
+            const isMatch = numVal !== null && g.min !== undefined && g.max !== undefined
+              ? (numVal >= Number(g.min) && numVal <= Number(g.max))
+              : false
+
+            return (
+              <div
+                key={index}
+                className={`flex justify-between text-[11px] border-b border-white/5 pb-1 last:border-0 last:pb-0 transition-colors ${
+                  isMatch ? "text-emerald-400 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded" : ""
+                }`}
+              >
+                <span className={isMatch ? "text-emerald-300 font-medium" : "text-white/50 font-normal"}>{g.name}:</span>
+                <span className={isMatch ? "text-emerald-300 font-bold ml-2" : "text-white/90 font-medium ml-2"}>
+                  {g.min !== undefined && g.max !== undefined ? `${g.min} - ${g.max}` : g.max}
+                </span>
+              </div>
+            )
+          })}
         </div>
       )
     }
@@ -105,11 +118,12 @@ export default function SimpleTestForm({ entry, onChange, patient, onNext }: Sim
     let targetMin = ref.min
     let targetMax = ref.max
 
-    if (ref.type === "group" && Array.isArray(ref.groups) && patient) {
-      const pAge = patient.age ?? 0
-      const pSex = (patient.sex || "").toUpperCase()
+    if (ref.type === "group" && Array.isArray(ref.groups)) {
+      const pAge = patient?.age ?? 0
+      const pSex = (patient?.sex || "").toUpperCase()
 
-      const matchedGroup = ref.groups.find((g: any) => {
+      const matchedGroups = ref.groups.filter((g: any) => {
+        if (!patient) return true
         const minA = g.minAge !== undefined ? g.minAge : 0
         const maxA = g.maxAge !== undefined ? g.maxAge : 120
         const ageMatches = pAge >= minA && pAge < maxA
@@ -124,9 +138,34 @@ export default function SimpleTestForm({ entry, onChange, patient, onNext }: Sim
         return ageMatches && sexMatches
       })
 
-      if (matchedGroup) {
-        targetMin = matchedGroup.min
-        targetMax = matchedGroup.max
+      if (matchedGroups.length === 1) {
+        targetMin = matchedGroups[0].min
+        targetMax = matchedGroups[0].max
+      } else if (matchedGroups.length > 1) {
+        // Múltiples grupos o fases clínicas aplicables (ej: fases del ciclo menstrual)
+        const inAnyGroup = matchedGroups.some((g: any) => {
+          const gMin = g.min !== undefined ? Number(g.min) : -Infinity
+          const gMax = g.max !== undefined ? Number(g.max) : Infinity
+          return numValue >= gMin && numValue <= gMax
+        })
+
+        if (inAnyGroup) {
+          return "border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500 text-emerald-300"
+        }
+
+        // Si no entra en ninguna fase, verificamos si está fuera de los extremos globales absolutos
+        const allMins = matchedGroups.map((g: any) => g.min).filter((v: any) => v !== undefined).map(Number)
+        const allMaxs = matchedGroups.map((g: any) => g.max).filter((v: any) => v !== undefined).map(Number)
+        const globalMin = allMins.length > 0 ? Math.min(...allMins) : undefined
+        const globalMax = allMaxs.length > 0 ? Math.max(...allMaxs) : undefined
+
+        if (globalMin !== undefined && numValue < globalMin) {
+          return "border-amber-500/50 bg-amber-500/5 focus:border-amber-500 focus:ring-amber-500 text-amber-300"
+        } else if (globalMax !== undefined && numValue > globalMax) {
+          return "border-red-500/50 bg-red-500/5 focus:border-red-500 focus:ring-red-500 text-red-300"
+        } else {
+          return "border-white/20 bg-white/5 focus:border-primary-500 focus:ring-primary-500 text-white"
+        }
       }
     }
 
@@ -134,8 +173,10 @@ export default function SimpleTestForm({ entry, onChange, patient, onNext }: Sim
       return "border-amber-500/50 bg-amber-500/5 focus:border-amber-500 focus:ring-amber-500 text-amber-300"
     } else if (targetMax !== undefined && numValue > targetMax) {
       return "border-red-500/50 bg-red-500/5 focus:border-red-500 focus:ring-red-500 text-red-300"
-    } else {
+    } else if (targetMin !== undefined || targetMax !== undefined) {
       return "border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500 focus:ring-emerald-500 text-emerald-300"
+    } else {
+      return "border-white/10 bg-white/5 focus:border-primary-500 focus:ring-primary-500 text-white"
     }
   }
 
