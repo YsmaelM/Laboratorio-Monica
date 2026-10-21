@@ -2,10 +2,16 @@ import { useState, useEffect, type FormEvent } from "react"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/shared/lib/firebase"
 import type { LabConfig } from "@/shared/types"
-import { Loader2, Save, Building2, FileSpreadsheet, FileText } from "lucide-react"
+import { Loader2, Save, Building2, FileSpreadsheet, FileText, Plus, Trash2, FileCheck } from "lucide-react"
 import toast from "react-hot-toast"
 import GoogleSheetsImporter from "@/features/catalog/components/GoogleSheetsImporter"
 import { useGenerateReport } from "@/features/reports/hooks/useGenerateReport"
+
+const DEFAULT_CERTIFICATE_REASONS = [
+  "se realizó pruebas de laboratorio",
+  "asistió a consulta médica",
+  "asistió para toma de muestra",
+]
 
 export default function LabSettingsPage() {
   const [loading, setLoading] = useState(true)
@@ -25,6 +31,8 @@ export default function LabSettingsPage() {
   const [emailAdress, setEmailAdress] = useState("")
   const [rif, setRif] = useState("")
   const [bioanalista, setBioanalista] = useState("")
+  const [certificateReasons, setCertificateReasons] = useState<string[]>(DEFAULT_CERTIFICATE_REASONS)
+  const [newReasonInput, setNewReasonInput] = useState("")
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -44,6 +52,9 @@ export default function LabSettingsPage() {
           setEmailAdress(data.emailAdress || "")
           setRif(data.rif || "")
           setBioanalista(data.bioanalista || "")
+          if (data.certificateReasons && data.certificateReasons.length > 0) {
+            setCertificateReasons(data.certificateReasons)
+          }
         }
       } catch (err) {
         console.error("Error fetching lab config:", err)
@@ -114,7 +125,8 @@ export default function LabSettingsPage() {
         footerText,
         signatureUrl,
         logoUrl,
-        bioanalista
+        bioanalista,
+        certificateReasons
       }, { merge: true })
 
       toast.success("Configuración guardada exitosamente")
@@ -124,6 +136,25 @@ export default function LabSettingsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleAddReason = () => {
+    const trimmed = newReasonInput.trim()
+    if (!trimmed) return
+    if (certificateReasons.includes(trimmed)) {
+      toast.error("Este motivo ya existe en la lista")
+      return
+    }
+    setCertificateReasons([...certificateReasons, trimmed])
+    setNewReasonInput("")
+  }
+
+  const handleRemoveReason = (indexToRemove: number) => {
+    if (certificateReasons.length <= 1) {
+      toast.error("Debe existir al menos un motivo predefinido")
+      return
+    }
+    setCertificateReasons(certificateReasons.filter((_, idx) => idx !== indexToRemove))
   }
 
   if (loading) {
@@ -274,6 +305,64 @@ export default function LabSettingsPage() {
                   placeholder="Ej. Resultados válidos solo si están firmados y sellados."
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-white/20 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 />
+              </div>
+
+              {/* ── Motivos Predefinidos para Constancias ── */}
+              <div className="sm:col-span-2 rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <FileCheck className="h-4 w-4 text-primary-400" />
+                    Motivos Predefinidos para Constancias
+                  </h3>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    Opciones que aparecerán al generar constancias o justificativos de asistencia.
+                  </p>
+                </div>
+
+                {/* Lista de motivos */}
+                <div className="space-y-2">
+                  {certificateReasons.map((reason, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-sm text-white/90"
+                    >
+                      <span className="flex-1 font-normal">{reason}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveReason(idx)}
+                        className="rounded-md p-1 text-white/40 hover:bg-red-500/20 hover:text-red-400 transition"
+                        title="Eliminar motivo"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input para agregar motivo */}
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newReasonInput}
+                    onChange={(e) => setNewReasonInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        handleAddReason()
+                      }
+                    }}
+                    placeholder="Ej. acudió a entrega de resultados"
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-white/20 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddReason}
+                    className="flex items-center gap-1.5 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/15 transition"
+                  >
+                    <Plus className="h-4 w-4 text-primary-400" />
+                    Agregar
+                  </button>
+                </div>
               </div>
             </div>
 

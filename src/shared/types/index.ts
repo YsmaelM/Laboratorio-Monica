@@ -16,6 +16,24 @@ export interface LabConfig {
   signatureUrl?: string
   rif?: string
   bioanalista?: string
+  certificateReasons?: string[]
+}
+
+// ─────────────────────────────────────────────
+// Certificates / Constancias
+// ─────────────────────────────────────────────
+export interface CertificateData {
+  firstName: string
+  lastName: string
+  nationalId?: string
+  age?: number | string
+  isMinor: boolean
+  representativeName?: string
+  representativeNationalId?: string
+  date: string
+  reason: string
+  bodyText: string
+  includeSignature: boolean
 }
 
 // ─────────────────────────────────────────────

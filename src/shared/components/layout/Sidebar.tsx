@@ -6,7 +6,10 @@ import {
   BookOpen,
   Settings,
   LogOut,
-  ChevronRight, BookUser, UsersRound
+  ChevronRight,
+  BookUser,
+  UsersRound,
+  FileText
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { APP_NAME } from "@/shared/lib/constants"
@@ -15,10 +18,10 @@ const navItems = [
   { to: "/newOrder", icon: ClipboardList, label: "Nueva Orden" },
   { to: "/orders", icon: History, label: "Historial" },
   { to: "/operativos", icon: UsersRound, label: "Operativos" },
+  { to: "/constancias", icon: FileText, label: "Constancias" },
   { to: "/catalog", icon: BookOpen, label: "Catálogo" },
   { to: "/patiens", icon: BookUser, label: "Pacientes" },
   { to: "/settings", icon: Settings, label: "Configuración" },
-
 ]
 
 export default function Sidebar() {
