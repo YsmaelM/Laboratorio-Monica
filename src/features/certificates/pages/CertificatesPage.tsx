@@ -7,9 +7,7 @@ import {
   ExternalLink,
   Download,
   Loader2,
-  Eye,
-  RefreshCw,
-  AlertCircle
+  Eye
 } from "lucide-react"
 import toast from "react-hot-toast"
 import type { LabConfig, CertificateData } from "@/shared/types"

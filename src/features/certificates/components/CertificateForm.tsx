@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
-  FileText,
   RotateCcw,
   Printer,
   Loader2,
   Calendar,
   User,
-  ShieldAlert,
-  CheckCircle,
   PencilLine
 } from "lucide-react"
 import type { CertificateData, Patient } from "@/shared/types"
